@@ -121,3 +121,5 @@ theorem coe_mk (f : α → ℝ) (h : IsKatetov f) : ⇑(⟨f, h⟩ : E(α)) = f 
   rfl
 
 end KatetovMap
+
+open KatetovMap
