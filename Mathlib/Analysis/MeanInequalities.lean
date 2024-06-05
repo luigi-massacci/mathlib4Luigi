@@ -879,37 +879,23 @@ version for real-valued nonnegative functions. -/
 theorem harm_mean_le_geom_mean_weighted (w z : ι → ℝ) (hw : ∀ i ∈ s, 0 < w i)
     (hw' : ∑ i in s, w i = 1) (hz : ∀ i ∈ s, 0 < z i) :
     (∑ i in s, w i / z i)⁻¹ ≤ ∏ i in s, z i ^ w i  := by
-    have hwnonneg : ∀ i ∈ s, 0 ≤  w i := (by intro i hi; exact le_of_lt (hw i hi))
-    have hznonneg : ∀ i ∈ s, 0 ≤  1/(z i) := (by intro i hi; exact one_div_nonneg.2 (le_of_lt (hz i hi)))
-    have := geom_mean_le_arith_mean_weighted s w (1/z) hwnonneg hw' hznonneg
-    have p_pos : 0 < ∏ i in s, (z i)⁻¹ ^ w i := by
-      apply prod_pos fun i hi => ?_
-      apply rpow_pos_of_pos
-      apply inv_pos.2 ((hz i hi))
-    have s_pos : 0 < ∑ i in s, w i * (z i)⁻¹ := by
-      apply sum_pos fun i hi => ?_
-      exact hs
-      apply Real.mul_pos (hw i hi) (inv_pos.2 (hz i hi))
-    simp at this
-    have := (inv_le_inv s_pos p_pos).mpr this
-    rw [← Finset.prod_inv_distrib] at this
+    have : ∏ i in s, (1 / z) i ^ w i ≤ ∑ i in s, w i * (1 / z) i :=
+      geom_mean_le_arith_mean_weighted s w (1/z) (fun i hi ↦ le_of_lt (hw i hi)) hw'
+                                                 (fun i hi ↦ one_div_nonneg.2 (le_of_lt (hz i hi)))
+    have p_pos : 0 < ∏ i in s, (z i)⁻¹ ^ w i :=
+      prod_pos fun i hi => rpow_pos_of_pos (inv_pos.2 (hz i hi)) _
+    have s_pos : 0 < ∑ i in s, w i * (z i)⁻¹ :=
+      sum_pos (fun i hi => Real.mul_pos (hw i hi) (inv_pos.2 (hz i hi))) hs
+    simp only [Pi.div_apply, Pi.one_apply, one_div] at this
+    rw [← inv_le_inv s_pos p_pos] at this
     apply le_trans this
-    simp
-    have p_pos₂ : 0 < (∏ i in s, (z i) ^ w i)⁻¹ := by
-      apply inv_pos.2
-      apply prod_pos fun i hi => ?_
-      apply rpow_pos_of_pos ((hz i hi))
-    rw [← inv_inv (∏ i in s, z i ^ w i)]
-    apply (inv_le_inv p_pos p_pos₂).mpr
-    rw [← Finset.prod_inv_distrib]
+    have p_pos₂ : 0 < (∏ i in s, (z i) ^ w i)⁻¹ :=
+      inv_pos.2 (prod_pos fun i hi => rpow_pos_of_pos ((hz i hi)) _ )
+    rw [← inv_inv (∏ i in s, z i ^ w i), inv_le_inv p_pos p_pos₂, ← Finset.prod_inv_distrib]
     gcongr
-    intro i hi
-    apply inv_nonneg.mpr
-    apply Real.rpow_nonneg <| le_of_lt (hz i hi)
-    rw [ Real.inv_rpow ]
-    have := fun i hi ↦ le_of_lt (hz i hi)
-    apply this
-    assumption
+    · refine fun i hi ↦ inv_nonneg.mpr (Real.rpow_nonneg (le_of_lt (hz i hi)) _)
+    · rw [Real.inv_rpow]
+      apply (fun i hi ↦ le_of_lt (hz i hi)); assumption
 
 
 
@@ -1051,4 +1037,4 @@ theorem harm_mean_le_geom_mean_weighted (w z : ι → ℝ) (hw : ∀ i ∈ s, 0 
 
 end Real
 
-end GeomMeanLEArithMean
+end HarmMeanLEGeomMean
