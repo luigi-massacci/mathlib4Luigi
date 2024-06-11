@@ -886,7 +886,7 @@ theorem harm_mean_le_geom_mean_weighted (w z : ι → ℝ) (hs : s.Nonempty) (hw
       prod_pos fun i hi => rpow_pos_of_pos (inv_pos.2 (hz i hi)) _
     have s_pos : 0 < ∑ i in s, w i * (z i)⁻¹ :=
       sum_pos (fun i hi => Real.mul_pos (hw i hi) (inv_pos.2 (hz i hi))) hs
-    simp only [Pi.div_apply, Pi.one_apply, one_div] at this
+    norm_num at this
     rw [← inv_le_inv s_pos p_pos, inv_eq_one_div] at this
     apply le_trans this
     have p_pos₂ : 0 < (∏ i in s, (z i) ^ w i)⁻¹ :=
@@ -899,8 +899,8 @@ theorem harm_mean_le_geom_mean_weighted (w z : ι → ℝ) (hs : s.Nonempty) (hw
 
 
 /-- **AM-GM inequality**: The **harmonic mean is less than or equal to the geometric mean. --/
-theorem harm_mean_le_geom_mean {ι : Type*} (s : Finset ι) (hs : Finset.Nonempty s) (w : ι → ℝ) (z : ι → ℝ)
-    (hw : ∀ i ∈ s, 0 < w i) (hw' : 0 < ∑ i in s, w i) (hz : ∀ i ∈ s, 0 < z i) :
+theorem harm_mean_le_geom_mean {ι : Type*} (s : Finset ι) (hs : Finset.Nonempty s) (w : ι → ℝ)
+    (z : ι → ℝ) (hw : ∀ i ∈ s, 0 < w i) (hw' : 0 < ∑ i in s, w i) (hz : ∀ i ∈ s, 0 < z i) :
     (∑ i in s, w i)/(∑ i in s, w i / z i) ≤ (∏ i in s, z i ^ w i) ^ (∑ i in s, w i)⁻¹ := by
   have := harm_mean_le_geom_mean_weighted s (fun i => (w i) / ∑ i in s, w i) z hs ?_ ?_ hz
   simp at this
@@ -912,119 +912,8 @@ theorem harm_mean_le_geom_mean {ι : Type*} (s : Finset ι) (hs : Finset.Nonempt
     refine Finset.prod_congr rfl (fun i hi => ?_)
     rw [← Real.rpow_mul (le_of_lt <| hz i hi) (w _) n⁻¹, div_eq_mul_inv (w _) n]
   · exact fun i hi ↦ div_pos (hw i hi) hw'
-  · simp_rw [div_eq_mul_inv (w _) (∑ i in s, w i), ←Finset.sum_mul _ _ (∑ i in s, w i)⁻¹]
+  · simp_rw [div_eq_mul_inv (w _) (∑ i in s, w i), ← Finset.sum_mul _ _ (∑ i in s, w i)⁻¹]
     rw [mul_inv_cancel (by apply ne_of_gt; assumption)]
-
-  -- convert harm_mean_le_geom_mean_weighted s (fun i => (w i) / ∑ i in s, w i) z ?_ ?_ hz using 2
-  -- · rw [← finset_prod_rpow _ _ (fun i hi => rpow_nonneg (hz _ hi) _) _]
-  --   refine Finset.prod_congr rfl (fun _ ih => ?_)
-  --   rw [div_eq_mul_inv, rpow_mul (hz _ ih)]
-  -- · simp_rw [div_eq_mul_inv, mul_assoc, mul_comm, ← mul_assoc, ← Finset.sum_mul, mul_comm]
-  -- · exact fun _ hi => div_nonneg (hw _ hi) (le_of_lt hw')
-  -- · simp_rw [div_eq_mul_inv, ← Finset.sum_mul]
-  --   exact mul_inv_cancel (by linarith)
-
--- theorem geom_mean_weighted_of_constant (w z : ι → ℝ) (x : ℝ) (hw : ∀ i ∈ s, 0 ≤ w i)
---     (hw' : ∑ i in s, w i = 1) (hz : ∀ i ∈ s, 0 ≤ z i) (hx : ∀ i ∈ s, w i ≠ 0 → z i = x) :
---     ∏ i in s, z i ^ w i = x :=
---   calc
---     ∏ i in s, z i ^ w i = ∏ i in s, x ^ w i := by
---       refine' prod_congr rfl fun i hi => _
---       rcases eq_or_ne (w i) 0 with h₀ | h₀
---       · rw [h₀, rpow_zero, rpow_zero]
---       · rw [hx i hi h₀]
---     _ = x := by
---       rw [← rpow_sum_of_nonneg _ hw, hw', rpow_one]
---       have : (∑ i in s, w i) ≠ 0 := by
---         rw [hw']
---         exact one_ne_zero
---       obtain ⟨i, his, hi⟩ := exists_ne_zero_of_sum_ne_zero this
---       rw [← hx i his hi]
---       exact hz i his
--- #align real.geom_mean_weighted_of_constant Real.geom_mean_weighted_of_constant
-
--- theorem arith_mean_weighted_of_constant (w z : ι → ℝ) (x : ℝ) (hw' : ∑ i in s, w i = 1)
---     (hx : ∀ i ∈ s, w i ≠ 0 → z i = x) : ∑ i in s, w i * z i = x :=
---   calc
---     ∑ i in s, w i * z i = ∑ i in s, w i * x := by
---       refine' sum_congr rfl fun i hi => _
---       rcases eq_or_ne (w i) 0 with hwi | hwi
---       · rw [hwi, zero_mul, zero_mul]
---       · rw [hx i hi hwi]
---     _ = x := by rw [← sum_mul, hw', one_mul]
--- #align real.arith_mean_weighted_of_constant Real.arith_mean_weighted_of_constant
-
--- theorem geom_mean_eq_arith_mean_weighted_of_constant (w z : ι → ℝ) (x : ℝ) (hw : ∀ i ∈ s, 0 ≤ w i)
---     (hw' : ∑ i in s, w i = 1) (hz : ∀ i ∈ s, 0 ≤ z i) (hx : ∀ i ∈ s, w i ≠ 0 → z i = x) :
---     ∏ i in s, z i ^ w i = ∑ i in s, w i * z i := by
---   rw [geom_mean_weighted_of_constant, arith_mean_weighted_of_constant] <;> assumption
--- #align real.geom_mean_eq_arith_mean_weighted_of_constant Real.geom_mean_eq_arith_mean_weighted_of_constant
-
--- end Real
-
--- namespace NNReal
-
--- /-- **AM-GM inequality**: The geometric mean is less than or equal to the arithmetic mean, weighted
--- version for `NNReal`-valued functions. -/
--- theorem geom_mean_le_arith_mean_weighted (w z : ι → ℝ≥0) (hw' : ∑ i in s, w i = 1) :
---     (∏ i in s, z i ^ (w i : ℝ)) ≤ ∑ i in s, w i * z i :=
---   mod_cast
---     Real.geom_mean_le_arith_mean_weighted _ _ _ (fun i _ => (w i).coe_nonneg)
---       (by assumption_mod_cast) fun i _ => (z i).coe_nonneg
--- #align nnreal.geom_mean_le_arith_mean_weighted NNReal.geom_mean_le_arith_mean_weighted
-
--- /-- **AM-GM inequality**: The geometric mean is less than or equal to the arithmetic mean, weighted
--- version for two `NNReal` numbers. -/
--- theorem geom_mean_le_arith_mean2_weighted (w₁ w₂ p₁ p₂ : ℝ≥0) :
---     w₁ + w₂ = 1 → p₁ ^ (w₁ : ℝ) * p₂ ^ (w₂ : ℝ) ≤ w₁ * p₁ + w₂ * p₂ := by
---   simpa only [Fin.prod_univ_succ, Fin.sum_univ_succ, Finset.prod_empty, Finset.sum_empty,
---     Finset.univ_eq_empty, Fin.cons_succ, Fin.cons_zero, add_zero, mul_one] using
---     geom_mean_le_arith_mean_weighted univ ![w₁, w₂] ![p₁, p₂]
--- #align nnreal.geom_mean_le_arith_mean2_weighted NNReal.geom_mean_le_arith_mean2_weighted
-
--- theorem geom_mean_le_arith_mean3_weighted (w₁ w₂ w₃ p₁ p₂ p₃ : ℝ≥0) :
---     w₁ + w₂ + w₃ = 1 →
---       p₁ ^ (w₁ : ℝ) * p₂ ^ (w₂ : ℝ) * p₃ ^ (w₃ : ℝ) ≤ w₁ * p₁ + w₂ * p₂ + w₃ * p₃ := by
---   simpa only [Fin.prod_univ_succ, Fin.sum_univ_succ, Finset.prod_empty, Finset.sum_empty,
---     Finset.univ_eq_empty, Fin.cons_succ, Fin.cons_zero, add_zero, mul_one, ← add_assoc,
---     mul_assoc] using geom_mean_le_arith_mean_weighted univ ![w₁, w₂, w₃] ![p₁, p₂, p₃]
--- #align nnreal.geom_mean_le_arith_mean3_weighted NNReal.geom_mean_le_arith_mean3_weighted
-
--- theorem geom_mean_le_arith_mean4_weighted (w₁ w₂ w₃ w₄ p₁ p₂ p₃ p₄ : ℝ≥0) :
---     w₁ + w₂ + w₃ + w₄ = 1 →
---       p₁ ^ (w₁ : ℝ) * p₂ ^ (w₂ : ℝ) * p₃ ^ (w₃ : ℝ) * p₄ ^ (w₄ : ℝ) ≤
---         w₁ * p₁ + w₂ * p₂ + w₃ * p₃ + w₄ * p₄ := by
---   simpa only [Fin.prod_univ_succ, Fin.sum_univ_succ, Finset.prod_empty, Finset.sum_empty,
---     Finset.univ_eq_empty, Fin.cons_succ, Fin.cons_zero, add_zero, mul_one, ← add_assoc,
---     mul_assoc] using geom_mean_le_arith_mean_weighted univ ![w₁, w₂, w₃, w₄] ![p₁, p₂, p₃, p₄]
--- #align nnreal.geom_mean_le_arith_mean4_weighted NNReal.geom_mean_le_arith_mean4_weighted
-
--- end NNReal
-
--- namespace Real
-
--- theorem geom_mean_le_arith_mean2_weighted {w₁ w₂ p₁ p₂ : ℝ} (hw₁ : 0 ≤ w₁) (hw₂ : 0 ≤ w₂)
---     (hp₁ : 0 ≤ p₁) (hp₂ : 0 ≤ p₂) (hw : w₁ + w₂ = 1) : p₁ ^ w₁ * p₂ ^ w₂ ≤ w₁ * p₁ + w₂ * p₂ :=
---   NNReal.geom_mean_le_arith_mean2_weighted ⟨w₁, hw₁⟩ ⟨w₂, hw₂⟩ ⟨p₁, hp₁⟩ ⟨p₂, hp₂⟩ <|
---     NNReal.coe_inj.1 <| by assumption
--- #align real.geom_mean_le_arith_mean2_weighted Real.geom_mean_le_arith_mean2_weighted
-
--- theorem geom_mean_le_arith_mean3_weighted {w₁ w₂ w₃ p₁ p₂ p₃ : ℝ} (hw₁ : 0 ≤ w₁) (hw₂ : 0 ≤ w₂)
---     (hw₃ : 0 ≤ w₃) (hp₁ : 0 ≤ p₁) (hp₂ : 0 ≤ p₂) (hp₃ : 0 ≤ p₃) (hw : w₁ + w₂ + w₃ = 1) :
---     p₁ ^ w₁ * p₂ ^ w₂ * p₃ ^ w₃ ≤ w₁ * p₁ + w₂ * p₂ + w₃ * p₃ :=
---   NNReal.geom_mean_le_arith_mean3_weighted ⟨w₁, hw₁⟩ ⟨w₂, hw₂⟩ ⟨w₃, hw₃⟩ ⟨p₁, hp₁⟩ ⟨p₂, hp₂⟩
---       ⟨p₃, hp₃⟩ <|
---     NNReal.coe_inj.1 hw
--- #align real.geom_mean_le_arith_mean3_weighted Real.geom_mean_le_arith_mean3_weighted
-
--- theorem geom_mean_le_arith_mean4_weighted {w₁ w₂ w₃ w₄ p₁ p₂ p₃ p₄ : ℝ} (hw₁ : 0 ≤ w₁)
---     (hw₂ : 0 ≤ w₂) (hw₃ : 0 ≤ w₃) (hw₄ : 0 ≤ w₄) (hp₁ : 0 ≤ p₁) (hp₂ : 0 ≤ p₂) (hp₃ : 0 ≤ p₃)
---     (hp₄ : 0 ≤ p₄) (hw : w₁ + w₂ + w₃ + w₄ = 1) :
---     p₁ ^ w₁ * p₂ ^ w₂ * p₃ ^ w₃ * p₄ ^ w₄ ≤ w₁ * p₁ + w₂ * p₂ + w₃ * p₃ + w₄ * p₄ :=
---   NNReal.geom_mean_le_arith_mean4_weighted ⟨w₁, hw₁⟩ ⟨w₂, hw₂⟩ ⟨w₃, hw₃⟩ ⟨w₄, hw₄⟩ ⟨p₁, hp₁⟩
---       ⟨p₂, hp₂⟩ ⟨p₃, hp₃⟩ ⟨p₄, hp₄⟩ <|
---     NNReal.coe_inj.1 <| by assumption
--- #align real.geom_mean_le_arith_mean4_weighted Real.geom_mean_le_arith_mean4_weighted
 
 end Real
 
