@@ -979,3 +979,42 @@ theorem Lp_add_le (hp : 1 ≤ p) :
 end ENNReal
 
 end HoelderMinkowski
+
+section Schur
+
+namespace Real
+
+theorem orderedSchurInequality {a b c t : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b)(hc : 0 ≤ c) (ht : 0 < t)
+  (hab : b ≤ a) (hbc : c ≤ b) :
+    a^t*(a - b)*(a - c) +  b^t*(b - a)*(b - c) +  c^t*(c - a)*(c - b) ≥ 0 := by
+  have h₁ : c^t*(a - c)*(b - c) ≥ 0 :=
+    mul_nonneg (mul_nonneg (by exact rpow_nonneg hc t) (by linarith)) (by linarith)
+  have h₂ : a^t *(a-b)*(a - c) ≥ b^t *(a-b)*(b - c) := by
+    gcongr <;> nlinarith [rpow_nonneg ha t]
+  calc
+    _ = a^t*(a - b)*(a - c) -  b^t*(a - b)*(b - c) +  c^t*(a - c)*(b - c) := by ring
+    _ ≥ 0 := by linarith
+
+theorem schurInequality (a b c t : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b)(hc : 0 ≤ c) (ht : 0 < t) :
+    a^t*(a - b)*(a - c) +  b^t*(b - a)*(b - c) +  c^t*(c - a)*(c - b) ≥ 0  := by
+  by_cases hab : b ≤ a
+  · by_cases hbc : c ≤ b
+    · exact orderedSchurInequality ha hb hc ht hab hbc
+    · by_cases hac : c ≤ a
+      · apply (orderedSchurInequality ha hc hb ht hac (by linarith)).trans
+        apply le_of_eq; ring
+      · apply (orderedSchurInequality hc ha hb ht (by linarith) (by linarith)).trans
+        apply le_of_eq; ring
+  · by_cases hbc : c ≤ b
+    · by_cases hac : c ≤ a
+      · apply (orderedSchurInequality hb ha hc ht (by linarith) (by linarith)).trans
+        apply le_of_eq; ring
+      · apply (orderedSchurInequality hb hc ha ht (by linarith) (by linarith)).trans
+        apply le_of_eq; ring
+    · apply (orderedSchurInequality hc hb ha ht (by linarith) (by linarith)).trans
+      apply le_of_eq; ring
+
+
+end Real
+
+end Schur

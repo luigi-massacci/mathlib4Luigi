@@ -103,8 +103,8 @@ theorem coe_copy (f : 𝓓^{n}_{K}(E, F)) (f' : E → F) (h : f' = f) : ⇑(f.co
 theorem copy_eq (f : 𝓓^{n}_{K}(E, F)) (f' : E → F) (h : f' = f) : f.copy f' h = f :=
   DFunLike.ext' h
 
-theorem _root_.Set.EqOn.comp_left₂ {α β δ γ} {op : α → β → δ} {a₁ a₂ : γ → α} {b₁ b₂ : γ → β} {s : Set γ}
-    (ha : s.EqOn a₁ a₂) (hb : s.EqOn b₁ b₂) :
+theorem _root_.Set.EqOn.comp_left₂ {α β δ γ} {op : α → β → δ} {a₁ a₂ : γ → α}
+    {b₁ b₂ : γ → β} {s : Set γ} (ha : s.EqOn a₁ a₂) (hb : s.EqOn b₁ b₂) :
     s.EqOn (fun x ↦ op (a₁ x) (b₁ x)) (fun x ↦ op (a₂ x) (b₂ x)) := fun _ hx =>
   congr_arg₂ _ (ha hx) (hb hx)
 
@@ -198,10 +198,12 @@ noncomputable def to_bcfₗ : 𝓓^{n}_{K}(E, F) →ₗ[𝕜] E →ᵇ F  where
 
 noncomputable def iteratedFDeriv' (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
     𝓓^{n-i}_{K}(E, E [×i]→L[ℝ] F) :=
-  if hi : i ≤ n then .of_support_subset
-    (f.contDiff.iteratedFDeriv_right <| sorry)--(tsub_add_cancel_of_le hi).le)
+  if hi : i ≤ n then
+    .of_support_subset
+    (f.contDiff.iteratedFDeriv_right <| (by exact_mod_cast (tsub_add_cancel_of_le hi).le))
     ((support_iteratedFDeriv_subset i).trans f.tsupport_subset)
   else 0
+
 
 @[simp]
 lemma iteratedFDeriv'_apply (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) (x : E) :
@@ -228,7 +230,9 @@ lemma iteratedFDeriv'_add (i : ℕ) {f g : 𝓓^{n}_{K}(E, F)} :
   ext : 1
   simp only [iteratedFDeriv'_apply, add_apply]
   split_ifs with hin
-  · exact iteratedFDeriv_add_apply sorry sorry--(f.contDiff.of_le hin) (g.contDiff.of_le hin)
+  · refine iteratedFDeriv_add_apply (ContDiff.contDiffAt ?_) (ContDiff.contDiffAt ?_)
+    · exact f.contDiff.of_le (by exact_mod_cast hin)
+    · exact g.contDiff.of_le (by exact_mod_cast hin)
   · rw [add_zero]
 
 lemma iteratedFDeriv'_smul (i : ℕ) {c : 𝕜} {f : 𝓓^{n}_{K}(E, F)} :
@@ -236,7 +240,8 @@ lemma iteratedFDeriv'_smul (i : ℕ) {c : 𝕜} {f : 𝓓^{n}_{K}(E, F)} :
   ext : 1
   simp only [iteratedFDeriv'_apply, RingHom.id_apply, smul_apply]
   split_ifs with hin
-  · exact iteratedFDeriv_const_smul_apply sorry -- (f.contDiff.of_le hin)
+  · apply iteratedFDeriv_const_smul_apply
+    refine ContDiff.contDiffAt <| f.contDiff.of_le (by exact_mod_cast hin)
   · rw [smul_zero]
 
 @[simps]
@@ -260,7 +265,7 @@ noncomputable def iteratedFDeriv_to_bcfₗ (i : ℕ) :
 
 section Topology
 
-instance topologicalSpace : TopologicalSpace 𝓓^{n}_{K}(E, F) :=
+noncomputable instance topologicalSpace : TopologicalSpace 𝓓^{n}_{K}(E, F) :=
   ⨅ (i : ℕ), induced (iteratedFDeriv_to_bcfₗ ℝ i) inferInstance
 
 noncomputable instance uniformSpace : UniformSpace 𝓓^{n}_{K}(E, F) := .replaceTopology
@@ -326,7 +331,12 @@ protected theorem seminorm_eq_bot {i : ℕ} (hin : n < i) :
 theorem norm_to_bcfₗ (f : 𝓓^{n}_{K}(E, F)) :
     ‖to_bcfₗ 𝕜 f‖ = ContDiffMapSupportedIn.seminorm 𝕜 E F n K 0 f := by
   simp [BoundedContinuousFunction.norm_eq_iSup_norm]
-  sorry
+  conv =>
+    enter [-1, 1, x, 1]
+    calc
+      _ = iteratedFDeriv ℝ 0 ⇑f x := by congr
+      _ = _ := ?_
+  simp only [norm_iteratedFDeriv_zero]
 
 @[simps!]
 noncomputable def to_bcfL : 𝓓^{n}_{K}(E, F) →L[𝕜] E →ᵇ F :=
@@ -361,8 +371,8 @@ protected noncomputable def fderiv' (f : 𝓓^{n}_{K}(E, F)) :
     𝓓^{n-1}_{K}(E, E →L[ℝ] F) :=
   if hn : n = 0 then 0 else
     .of_support_subset
-    (f.contDiff.fderiv_right <| sorry)
-      --(tsub_add_cancel_of_le <| ENat.one_le_iff_ne_zero.mpr hn).le)
+    (f.contDiff.fderiv_right <|
+    (by exact_mod_cast (tsub_add_cancel_of_le <| ENat.one_le_iff_ne_zero.mpr hn).le))
     ((support_fderiv_subset ℝ).trans f.tsupport_subset)
 
 @[simp]
@@ -395,20 +405,20 @@ noncomputable def fderivₗ' {n : ℕ∞} : 𝓓^{n}_{K}(E, F) →ₗ[𝕜] 𝓓
     · rw [add_zero]
     · rw [← ne_eq, ← ENat.one_le_iff_ne_zero] at hn
       exact fderiv_add
-        (f₁.contDiff.differentiable sorry).differentiableAt
-        (f₂.contDiff.differentiable sorry).differentiableAt
+        (f₁.contDiff.differentiable (by exact_mod_cast hn)).differentiableAt
+        (f₂.contDiff.differentiable (by exact_mod_cast hn)).differentiableAt
   map_smul' c f := by
     ext : 1
     simp only [fderiv'_apply, smul_apply]
     split_ifs with hn
     · rw [smul_zero]
     · rw [← ne_eq, ← ENat.one_le_iff_ne_zero] at hn
-      exact fderiv_const_smul (f.contDiff.differentiable sorry).differentiableAt c
+      exact fderiv_const_smul (f.contDiff.differentiable (by exact_mod_cast hn)).differentiableAt c
 
 theorem _root_.ENat.eq_zero_or_add_one (i : ℕ∞) : i = 0 ∨ ∃ k, i = k + 1 := by
   refine or_iff_not_imp_left.mpr fun h ↦ ⟨i - 1, ?_⟩
-  sorry
-  -- simp only [ENat.one_le_iff_ne_zero, ne_eq, h, tsub_add_cancel_of_le]
+  rw [tsub_add_cancel_of_le (ENat.one_le_iff_ne_zero.mpr h)]
+
 
 theorem seminorm_fderiv' (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
     ContDiffMapSupportedIn.seminorm 𝕜 E (E →L[ℝ] F) (n - 1) K i f.fderiv' =
@@ -416,7 +426,25 @@ theorem seminorm_fderiv' (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
   simp_rw [ContDiffMapSupportedIn.seminorm_apply, BoundedContinuousFunction.norm_eq_iSup_norm]
   refine iSup_congr fun x ↦ ?_
   rcases eq_or_ne n 0 with rfl|hn
-  all_goals sorry
+  · simp [iteratedFDeriv'_zero]
+    conv =>
+      lhs
+      arg 1
+      calc
+        _ = (0 : E → ContinuousMultilinearMap ℝ (fun i ↦ E) (E →L[ℝ] F)) x := by exact rfl
+        _ = _ := ?_
+    conv =>
+      rhs
+      arg 1
+      calc
+        _ = (0 : E → ContinuousMultilinearMap ℝ (fun i ↦ E) F) x := by congr
+        _ = _ := ?_
+    simp only [Pi.zero_apply, norm_zero]
+
+
+
+  · sorry
+
   -- · simp [iteratedFDeriv'_zero]
   -- rcases lt_or_ge (i : ℕ∞) n with (hin|hin)
   -- · have hin' : i + 1 ≤ n := sorry
