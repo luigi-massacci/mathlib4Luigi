@@ -51,16 +51,13 @@ instance (B : Type*) (E F : outParam <| Type*)
     ContinuousMapClass B E F where
   map_continuous f := (map_contDiff f).continuous
 
--- Missing some kind of _apply theorem for simplification further down. See
--- SchwartzMap.instBoundedContinuousMapClass, SchwartzMap.toBoundedContinuousFunction_apply
-
 instance (B : Type*) (E F : outParam <| Type*)
     [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedSpace ℝ E] [NormedSpace ℝ F]
     (n : outParam ℕ∞) (K : outParam <| Compacts E)
     [ContDiffMapSupportedInClass B E F n K] :
     BoundedContinuousMapClass B E F where
   map_bounded f := by
-    have := HasCompactSupport.intro K.2 (map_zero_on_compl f)
+    have := HasCompactSupport.intro K.isCompact (map_zero_on_compl f)
     rcases (map_continuous f).bounded_above_of_compact_support this with ⟨C, hC⟩
     exact map_bounded (BoundedContinuousFunction.ofNormedAddCommGroup f (map_continuous f) C hC)
 
@@ -133,6 +130,7 @@ instance : Neg 𝓓^{n}_{K}(E, F) where
     exact f.zero_on_compl.comp_left
 
 -- TODO 2: actually think about nsmul and zsmul
+-- Vedi MIL Instances/Diamonds per Module, è la quello a cui bisogna pensare
 instance : AddCommGroup 𝓓^{n}_{K}(E, F) where
   add_assoc f₁ f₂ f₃ := by ext; exact add_assoc _ _ _
   add_comm f g := by ext; exact add_comm _ _
@@ -142,6 +140,8 @@ instance : AddCommGroup 𝓓^{n}_{K}(E, F) where
   nsmul := nsmulRec
   zsmul := zsmulRec
 
+
+-- Q: R is really ℂ, right??  (or ℝ...)
 instance {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F] :
     Module R 𝓓^{n}_{K}(E, F) where
   smul c f := ContDiffMapSupportedIn.mk (c • (f : E → F)) (f.contDiff.const_smul c) <| by
@@ -184,10 +184,10 @@ protected theorem support_subset (f : 𝓓^{n}_{K}(E, F)) : support f ⊆ K :=
   support_subset_iff'.mpr f.zero_on_compl
 
 protected theorem tsupport_subset (f : 𝓓^{n}_{K}(E, F)) : tsupport f ⊆ K :=
-  closure_minimal f.support_subset K.2.isClosed
+  closure_minimal f.support_subset K.isCompact.isClosed
 
 protected theorem hasCompactSupport (f : 𝓓^{n}_{K}(E, F)) : HasCompactSupport f :=
-  HasCompactSupport.intro K.2 f.zero_on_compl
+  HasCompactSupport.intro K.isCompact f.zero_on_compl
 
 protected def of_support_subset {f : E → F} (hf : ContDiff ℝ n f) (hsupp : support f ⊆ K) :
     𝓓^{n}_{K}(E, F) where
@@ -211,7 +211,7 @@ noncomputable def iteratedFDeriv' (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
     𝓓^{n-i}_{K}(E, E [×i]→L[ℝ] F) :=
   if hi : i ≤ n then
     .of_support_subset
-    (f.contDiff.iteratedFDeriv_right <| (by exact_mod_cast (tsub_add_cancel_of_le hi).le))
+    (f.contDiff.iteratedFDeriv_right <| (WithTop.coe_le_coe.mpr ((tsub_add_cancel_of_le hi).le)))
     ((support_iteratedFDeriv_subset i).trans f.tsupport_subset)
   else 0
 
@@ -222,7 +222,6 @@ lemma iteratedFDeriv'_apply (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) (x : E) :
   rw [ContDiffMapSupportedIn.iteratedFDeriv']
   split_ifs <;> rfl
 
-@[simp]
 lemma coe_iteratedFDeriv'_of_le {i : ℕ} (hin : i ≤ n) (f : 𝓓^{n}_{K}(E, F)) :
     f.iteratedFDeriv' i = iteratedFDeriv ℝ i f := by
   ext : 1
@@ -359,7 +358,6 @@ theorem norm_to_bcfₗ (f : 𝓓^{n}_{K}(E, F)) :
     ‖to_bcfₗ 𝕜 f‖ = ContDiffMapSupportedIn.seminorm 𝕜 E F n K 0 f := by
   simp only [BoundedContinuousFunction.norm_eq_iSup_norm, to_bcfₗ_apply_apply,
     ContDiffMapSupportedIn.seminorm_apply, CharP.cast_eq_zero, zero_le]
-  -- problem found, conversion iteratedFDeriv' <-> iteratedFDeriv applied too eagerly
   simp only [iteratedFDeriv'_tobcf_apply]
   conv =>
     enter [-1, 1, x, 1]
