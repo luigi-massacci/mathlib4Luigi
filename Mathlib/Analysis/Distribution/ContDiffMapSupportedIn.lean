@@ -116,6 +116,8 @@ theorem _root_.Set.EqOn.comp_left₂ {α β δ γ} {op : α → β → δ} {a₁
     s.EqOn (fun x ↦ op (a₁ x) (b₁ x)) (fun x ↦ op (a₂ x) (b₂ x)) := fun _ hx =>
   congr_arg₂ _ (ha hx) (hb hx)
 
+
+-- Q: Why have this separate as opposed to inside AddCommGroup?
 instance : Zero 𝓓^{n}_{K}(E, F) where
   zero := ContDiffMapSupportedIn.mk 0 contDiff_zero_fun fun _ _ ↦ rfl
 
@@ -222,6 +224,8 @@ lemma iteratedFDeriv'_apply (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) (x : E) :
   rw [ContDiffMapSupportedIn.iteratedFDeriv']
   split_ifs <;> rfl
 
+-- This as simp messed stuff up, trying low for experiment
+@[simp low-1]
 lemma coe_iteratedFDeriv'_of_le {i : ℕ} (hin : i ≤ n) (f : 𝓓^{n}_{K}(E, F)) :
     f.iteratedFDeriv' i = iteratedFDeriv ℝ i f := by
   ext : 1
@@ -276,6 +280,10 @@ lemma iteratedFDeriv'_zero (i : ℕ)  :
     (0 : 𝓓^{n}_{K}(E, F)).iteratedFDeriv' i = 0 :=
   map_zero (iteratedFDerivₗ' ℝ i)
 
+----------------------------------------------------------------------------------------------------
+-- Read up to here (16/05)
+----------------------------------------------------------------------------------------------------
+
 /-- The composition of `ContDiffMapSupportedIn.to_bcfₗ` and
 `ContDiffMapSupportedIn.iteratedFDerivₗ`. We define this as a separate `abbrev` because this family
 of maps is used a lot for defining and using the topology on `ContDiffMapSupportedIn`, and Lean
@@ -289,6 +297,7 @@ section Topology
 noncomputable instance topologicalSpace : TopologicalSpace 𝓓^{n}_{K}(E, F) :=
   ⨅ (i : ℕ), induced (iteratedFDeriv_to_bcfₗ ℝ i) inferInstance
 
+-- The following two lemmas bear some thinking
 noncomputable instance uniformSpace : UniformSpace 𝓓^{n}_{K}(E, F) := .replaceTopology
   (⨅ (i : ℕ), UniformSpace.comap (iteratedFDeriv_to_bcfₗ ℝ i) inferInstance)
   toTopologicalSpace_iInf.symm
@@ -299,7 +308,7 @@ protected theorem uniformSpace_eq_iInf : (uniformSpace : UniformSpace 𝓓^{n}_{
   UniformSpace.replaceTopology_eq _ toTopologicalSpace_iInf.symm
 
 instance : IsUniformAddGroup 𝓓^{n}_{K}(E, F) := by
-  rw [ContDiffMapSupportedIn.uniformSpace_eq_iInf]
+  rw [ContDiffMapSupportedIn.uniformSpace_eq_iInf] -- this is not human...
   refine isUniformAddGroup_iInf (fun i ↦ ?_)
   exact IsUniformAddGroup.comap _
 
@@ -313,10 +322,15 @@ lemma continuous_iff_comp {X} [TopologicalSpace X] (φ : X → 𝓓^{n}_{K}(E, F
     Continuous φ ↔ ∀ i, Continuous (iteratedFDeriv_to_bcfₗ ℝ i ∘ φ) := by
   simp_rw [continuous_iInf_rng, continuous_induced_rng]
 
+----------------------------------------------------------------------------------------------------
+-- Read up to here (23/05)
+----------------------------------------------------------------------------------------------------
+
+
 variable (E F n K)
 
 protected noncomputable def seminorm (i : ℕ) : Seminorm 𝕜 𝓓^{n}_{K}(E, F) :=
-  (normSeminorm 𝕜 <| E →ᵇ (E [×i]→L[ℝ] F)).comp (iteratedFDeriv_to_bcfₗ 𝕜 i)
+  (normSeminorm 𝕜 (E →ᵇ (E [×i]→L[ℝ] F))).comp (iteratedFDeriv_to_bcfₗ 𝕜 i)
 
 protected noncomputable def seminorm' (i : ℕ) : Seminorm 𝕜 𝓓^{n}_{K}(E, F) :=
   (Finset.Iic i).sup (ContDiffMapSupportedIn.seminorm 𝕜 E F n K)
@@ -475,8 +489,9 @@ noncomputable def fderivL' : 𝓓^{n}_{K}(E, F) →L[𝕜] 𝓓^{n-1}_{K}(E, E �
       (ContDiffMapSupportedIn.withSeminorms 𝕜 E F n K)
       (ContDiffMapSupportedIn.withSeminorms 𝕜 E (E →L[ℝ] F) (n-1) K) _
       fun i ↦ ⟨{i+1}, 1, fun f ↦ ?_⟩
-    dsimp only -- TODO 5: cleanup
-    rw [Seminorm.comp_apply, one_smul, Finset.sup_singleton, fderivₗ'_apply, seminorm_fderiv']
+    simp only [Seminorm.comp_apply, fderivₗ'_apply,
+      Finset.sup_singleton, one_smul]
+    rw [seminorm_fderiv']
 
 section infinite
 
@@ -543,7 +558,3 @@ protected theorem withSeminorms_of_finite : WithSeminorms
 end finite
 
 end ContDiffMapSupportedIn
-
-instance {E F} [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedSpace ℝ E] [NormedSpace ℝ F]
-    {K : Compacts E} : LocallyConvexSpace ℝ 𝓓^{n}_{K}(E, F) :=
-  locallyConvexSpace_iInf fun _ ↦ locallyConvexSpace_induced _
