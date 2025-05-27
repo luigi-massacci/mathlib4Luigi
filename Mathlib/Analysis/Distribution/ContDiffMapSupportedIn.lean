@@ -131,16 +131,40 @@ instance : Neg 𝓓^{n}_{K}(E, F) where
     rw [← neg_zero]
     exact f.zero_on_compl.comp_left
 
--- TODO 2: actually think about nsmul and zsmul
--- Vedi MIL Instances/Diamonds per Module, è la quello a cui bisogna pensare
-instance : AddCommGroup 𝓓^{n}_{K}(E, F) where
-  add_assoc f₁ f₂ f₃ := by ext; exact add_assoc _ _ _
-  add_comm f g := by ext; exact add_comm _ _
-  zero_add f := by ext; exact zero_add _
-  add_zero f := by ext; exact add_zero _
-  neg_add_cancel f := by ext; exact neg_add_cancel _
-  nsmul := nsmulRec
-  zsmul := zsmulRec
+instance instSub : Sub 𝓓^{n}_{K}(E, F) :=
+  ⟨fun f g =>
+    ⟨f.toFun - g.toFun, (f.contDiff').sub (g.contDiff'), by
+      intro x hx
+      simp [f.zero_on_compl hx, g.zero_on_compl hx]
+    ⟩
+  ⟩
+
+instance instNSMul : SMul ℕ 𝓓^{n}_{K}(E, F) :=
+ ⟨fun c f ↦
+    {
+      toFun := c • f.toFun
+      contDiff' := (f.contDiff').const_smul c
+      zero_on_compl' := by
+        rw [← smul_zero c]
+        exact f.zero_on_compl.comp_left
+    }
+  ⟩
+
+instance instZSMul : SMul ℤ 𝓓^{n}_{K}(E, F) :=
+ ⟨fun c f ↦
+    {
+      toFun := c • f.toFun
+      contDiff' := (f.contDiff').const_smul c
+      zero_on_compl' := by
+        rw [← smul_zero c]
+        exact f.zero_on_compl.comp_left
+    }
+  ⟩
+
+instance : AddCommGroup 𝓓^{n}_{K}(E, F) :=
+  DFunLike.coe_injective.addCommGroup _ rfl (fun _ _ => rfl) (fun _ => rfl) (fun _ _ => rfl)
+    (fun _ _ => rfl) fun _ _ => rfl
+
 
 
 -- Q: R is really ℂ, right??  (or ℝ...)
@@ -316,7 +340,7 @@ instance : ContinuousSMul 𝕜 𝓓^{n}_{K}(E, F) := by
   refine continuousSMul_iInf (fun i ↦ continuousSMul_induced (iteratedFDeriv_to_bcfₗ 𝕜 i))
 
 instance : LocallyConvexSpace ℝ 𝓓^{n}_{K}(E, F) :=
-  locallyConvexSpace_iInf fun _ ↦ locallyConvexSpace_induced _
+  LocallyConvexSpace.iInf fun _ ↦ LocallyConvexSpace.induced _
 
 lemma continuous_iff_comp {X} [TopologicalSpace X] (φ : X → 𝓓^{n}_{K}(E, F)) :
     Continuous φ ↔ ∀ i, Continuous (iteratedFDeriv_to_bcfₗ ℝ i ∘ φ) := by
