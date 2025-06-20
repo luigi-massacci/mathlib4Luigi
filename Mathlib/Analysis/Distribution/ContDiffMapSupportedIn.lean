@@ -116,8 +116,6 @@ theorem _root_.Set.EqOn.comp_left₂ {α β δ γ} {op : α → β → δ} {a₁
     s.EqOn (fun x ↦ op (a₁ x) (b₁ x)) (fun x ↦ op (a₂ x) (b₂ x)) := fun _ hx =>
   congr_arg₂ _ (ha hx) (hb hx)
 
-
--- Q: Why have this separate as opposed to inside AddCommGroup?
 instance : Zero 𝓓^{n}_{K}(E, F) where
   zero := ContDiffMapSupportedIn.mk 0 contDiff_zero_fun fun _ _ ↦ rfl
 
@@ -166,8 +164,6 @@ instance : AddCommGroup 𝓓^{n}_{K}(E, F) :=
     (fun _ _ => rfl) fun _ _ => rfl
 
 
-
--- Q: R is really ℂ, right??  (or ℝ...)
 instance {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F] :
     Module R 𝓓^{n}_{K}(E, F) where
   smul c f := ContDiffMapSupportedIn.mk (c • (f : E → F)) (f.contDiff.const_smul c) <| by
@@ -248,7 +244,6 @@ lemma iteratedFDeriv'_apply (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) (x : E) :
   rw [ContDiffMapSupportedIn.iteratedFDeriv']
   split_ifs <;> rfl
 
--- This as simp messed stuff up, trying low for experiment
 @[simp low-1]
 lemma coe_iteratedFDeriv'_of_le {i : ℕ} (hin : i ≤ n) (f : 𝓓^{n}_{K}(E, F)) :
     f.iteratedFDeriv' i = iteratedFDeriv ℝ i f := by
@@ -304,9 +299,6 @@ lemma iteratedFDeriv'_zero (i : ℕ)  :
     (0 : 𝓓^{n}_{K}(E, F)).iteratedFDeriv' i = 0 :=
   map_zero (iteratedFDerivₗ' ℝ i)
 
-----------------------------------------------------------------------------------------------------
--- Read up to here (16/05)
-----------------------------------------------------------------------------------------------------
 
 /-- The composition of `ContDiffMapSupportedIn.to_bcfₗ` and
 `ContDiffMapSupportedIn.iteratedFDerivₗ`. We define this as a separate `abbrev` because this family
@@ -332,7 +324,7 @@ protected theorem uniformSpace_eq_iInf : (uniformSpace : UniformSpace 𝓓^{n}_{
   UniformSpace.replaceTopology_eq _ toTopologicalSpace_iInf.symm
 
 instance : IsUniformAddGroup 𝓓^{n}_{K}(E, F) := by
-  rw [ContDiffMapSupportedIn.uniformSpace_eq_iInf] -- this is not human...
+  rw [ContDiffMapSupportedIn.uniformSpace_eq_iInf]
   refine isUniformAddGroup_iInf (fun i ↦ ?_)
   exact IsUniformAddGroup.comap _
 
@@ -345,10 +337,6 @@ instance : LocallyConvexSpace ℝ 𝓓^{n}_{K}(E, F) :=
 lemma continuous_iff_comp {X} [TopologicalSpace X] (φ : X → 𝓓^{n}_{K}(E, F)) :
     Continuous φ ↔ ∀ i, Continuous (iteratedFDeriv_to_bcfₗ ℝ i ∘ φ) := by
   simp_rw [continuous_iInf_rng, continuous_induced_rng]
-
-----------------------------------------------------------------------------------------------------
--- Read up to here (23/05)
-----------------------------------------------------------------------------------------------------
 
 
 variable (E F n K)
