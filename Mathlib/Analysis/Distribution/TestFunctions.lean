@@ -11,6 +11,10 @@ variable [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
 variable {n : ℕ∞}
 
+
+-- Note: does it make sense to parametrize by some Ω : Opens E?
+-- As opposed to taking the subtype if needed. Seems like most of time we will take the whole space
+-- anyway / extend by garbage
 structure TestFunction (n : ℕ∞) : Type _ where
   protected toFun : E → F
   protected contDiff' : ContDiff ℝ n toFun
@@ -196,12 +200,39 @@ instance {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstS
 
 end Module
 
-def ContDiffMapSupportedIn.toTestFunction (K : Compacts E) :
-𝓓^{n}_{K}(E, F) →ₗ[𝕜] 𝓓^{n}(E, F) where
+variable (n : ℕ∞) (E F)
+
+def ContDiffMapSupportedIn.toTestFunction (K : Compacts E) : 𝓓^{n}_{K}(E, F) →ₗ[𝕜] 𝓓^{n}(E, F) where
   toFun f := TestFunction.mk f (f.contDiff) (f.hasCompactSupport)
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
-
 noncomputable def topologicalSpace0 : TopologicalSpace 𝓓^{n}(E, F) :=
-  ⨆ (K : Compacts E), coinduced (ContDiffMapSupportedIn.toTestFunction ℝ K) (inferInstance)
+  ⨆ (K : Compacts E), coinduced (ContDiffMapSupportedIn.toTestFunction 𝕜 E F n K) (inferInstance)
+
+noncomputable instance topologicalSpace : TopologicalSpace 𝓓^{n}(E, F) :=
+  sInf {t : TopologicalSpace 𝓓^{n}(E, F)
+       | topologicalSpace0 ℝ E F n ≤ t ∧ @LocallyConvexSpace ℝ 𝓓^{n}(E, F) _ _ _ _ t}
+
+example (K : Compacts E): Continuous (ContDiffMapSupportedIn.toTestFunction 𝕜 E F n K) := by
+  apply continuous_iff_coinduced_le.2
+  have : topologicalSpace0 𝕜 E F n ≤ TestFunction.topologicalSpace E F n := by
+    exact le_sInf (by aesop)
+  exact le_trans (le_sSup (by aesop)) this
+
+protected theorem continuous_iff {V : Type*} [AddCommMonoid V] [Module ℝ V]
+  [t : TopologicalSpace V] [LocallyConvexSpace ℝ V] (f : 𝓓^{n}(E, F) →ₗ[ℝ] V) :
+    Continuous f ↔
+    ∀ K : Compacts E, Continuous (f ∘ ContDiffMapSupportedIn.toTestFunction 𝕜 E F n K) := by
+    rw [continuous_iff_le_induced]
+    have : TestFunction.topologicalSpace E F n ≤ induced f t
+          ↔ topologicalSpace0 ℝ E F n ≤ induced f t := by
+        constructor <;> refine fun h ↦ ?_
+        · refine le_trans (le_sInf (fun _ _ ↦ ?_)) h
+          simp_all only [LocallyConvexSpace.induced f, mem_setOf_eq]
+        · refine sInf_le ?_
+          simp only [mem_setOf_eq, LocallyConvexSpace.induced f, and_true, h]
+    rw [this, topologicalSpace0, iSup_le_iff]
+    simp_rw [← @coinduced_le_iff_le_induced _ _ f _ t, coinduced_compose]
+    simp_rw [← continuous_iff_coinduced_le]
+    rfl
