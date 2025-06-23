@@ -116,13 +116,31 @@ theorem _root_.Set.EqOn.comp_left₂ {α β δ γ} {op : α → β → δ} {a₁
     s.EqOn (fun x ↦ op (a₁ x) (b₁ x)) (fun x ↦ op (a₂ x) (b₂ x)) := fun _ hx =>
   congr_arg₂ _ (ha hx) (hb hx)
 
+section AddCommGroup
+
 instance : Zero 𝓓^{n}_{K}(E, F) where
   zero := ContDiffMapSupportedIn.mk 0 contDiff_zero_fun fun _ _ ↦ rfl
+
+@[simp]
+lemma coe_zero : (0 : 𝓓^{n}_{K}(E, F)) = (0 : E → F) :=
+  rfl
+
+@[simp]
+lemma zero_apply (x : E) : (0 : 𝓓^{n}_{K}(E, F)) x = 0 :=
+  rfl
 
 instance : Add 𝓓^{n}_{K}(E, F) where
   add f g := ContDiffMapSupportedIn.mk (f + g) (f.contDiff.add g.contDiff) <| by
     rw [← add_zero 0]
     exact f.zero_on_compl.comp_left₂ g.zero_on_compl
+
+@[simp]
+lemma coe_add (f g : 𝓓^{n}_{K}(E, F)) : (f + g : 𝓓^{n}_{K}(E, F)) = (f : E → F) + g :=
+  rfl
+
+@[simp]
+lemma add_apply (f g : 𝓓^{n}_{K}(E, F)) (x : E) : (f + g) x = f x + g x :=
+  rfl
 
 instance : Neg 𝓓^{n}_{K}(E, F) where
   neg f := ContDiffMapSupportedIn.mk (-f) (f.contDiff.neg) <| by
@@ -131,16 +149,34 @@ instance : Neg 𝓓^{n}_{K}(E, F) where
 
 instance instSub : Sub 𝓓^{n}_{K}(E, F) :=
   ⟨fun f g =>
-    ⟨f.toFun - g.toFun, (f.contDiff').sub (g.contDiff'), by
+    ⟨f - g, (f.contDiff').sub (g.contDiff'), by
       intro x hx
       simp [f.zero_on_compl hx, g.zero_on_compl hx]
     ⟩
   ⟩
 
+instance instSMul {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F] :
+   SMul R 𝓓^{n}_{K}(E, F) :=
+⟨fun c f ↦
+  ContDiffMapSupportedIn.mk (c • (f : E → F)) (f.contDiff.const_smul c) <| by
+    rw [← smul_zero c]
+    exact f.zero_on_compl.comp_left⟩
+
+@[simp]
+lemma coe_smul {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F]
+    (c : R) (f : 𝓓^{n}_{K}(E, F)) : (c • f : 𝓓^{n}_{K}(E, F)) = c • (f : E → F) :=
+  rfl
+
+@[simp]
+lemma smul_apply {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F]
+    (c : R) (f : 𝓓^{n}_{K}(E, F)) (x : E) : (c • f) x = c • (f x) :=
+  rfl
+
+
 instance instNSMul : SMul ℕ 𝓓^{n}_{K}(E, F) :=
  ⟨fun c f ↦
     {
-      toFun := c • f.toFun
+      toFun := c • f
       contDiff' := (f.contDiff').const_smul c
       zero_on_compl' := by
         rw [← smul_zero c]
@@ -151,7 +187,7 @@ instance instNSMul : SMul ℕ 𝓓^{n}_{K}(E, F) :=
 instance instZSMul : SMul ℤ 𝓓^{n}_{K}(E, F) :=
  ⟨fun c f ↦
     {
-      toFun := c • f.toFun
+      toFun := c • f
       contDiff' := (f.contDiff').const_smul c
       zero_on_compl' := by
         rw [← smul_zero c]
@@ -163,44 +199,33 @@ instance : AddCommGroup 𝓓^{n}_{K}(E, F) :=
   DFunLike.coe_injective.addCommGroup _ rfl (fun _ _ => rfl) (fun _ => rfl) (fun _ _ => rfl)
     (fun _ _ => rfl) fun _ _ => rfl
 
+variable (E F K n)
 
+/-- Coercion as an additive homomorphism. -/
+def coeHom : 𝓓^{n}_{K}(E, F) →+ E → F where
+  toFun f := f
+  map_zero' := coe_zero
+  map_add' _ _ := rfl
+
+variable {E F}
+
+theorem coe_coeHom : (coeHom E F n K : 𝓓^{n}_{K}(E, F) → E → F) = DFunLike.coe :=
+  rfl
+
+theorem coeHom_injective : Function.Injective (coeHom E F n K) := by
+  rw [coe_coeHom]
+  exact DFunLike.coe_injective
+
+end AddCommGroup
+
+section Module
+
+-- Note: This should probably be used more! the ugy ext ... ext ... is in a lot of places.
 instance {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F] :
-    Module R 𝓓^{n}_{K}(E, F) where
-  smul c f := ContDiffMapSupportedIn.mk (c • (f : E → F)) (f.contDiff.const_smul c) <| by
-    rw [← smul_zero c]
-    exact f.zero_on_compl.comp_left
-  one_smul f := by ext; exact one_smul _ _
-  mul_smul c₁ c₂ f := by ext; exact mul_smul _ _ _
-  smul_zero c := by ext; exact smul_zero _
-  smul_add c f g := by ext; exact smul_add _ _ _
-  add_smul c₁ c₂ f := by ext; exact add_smul _ _ _
-  zero_smul f := by ext; exact zero_smul _ _
+    Module R 𝓓^{n}_{K}(E, F) :=
+  (coeHom_injective n K).module R (coeHom E F n K) fun _ _ => rfl
 
-@[simp]
-lemma coe_zero : (0 : 𝓓^{n}_{K}(E, F)) = (0 : E → F) :=
-  rfl
-
-@[simp]
-lemma zero_apply (x : E) : (0 : 𝓓^{n}_{K}(E, F)) x = 0 :=
-  rfl
-
-@[simp]
-lemma coe_add (f g : 𝓓^{n}_{K}(E, F)) : (f + g : 𝓓^{n}_{K}(E, F)) = (f : E → F) + g :=
-  rfl
-
-@[simp]
-lemma add_apply (f g : 𝓓^{n}_{K}(E, F)) (x : E) : (f + g) x = f x + g x :=
-  rfl
-
-@[simp]
-lemma coe_smul {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F]
-    (c : R) (f : 𝓓^{n}_{K}(E, F)) : (c • f : 𝓓^{n}_{K}(E, F)) = c • (f : E → F) :=
-  rfl
-
-@[simp]
-lemma smul_apply {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F]
-    (c : R) (f : 𝓓^{n}_{K}(E, F)) (x : E) : (c • f) x = c • (f x) :=
-  rfl
+end Module
 
 protected theorem support_subset (f : 𝓓^{n}_{K}(E, F)) : support f ⊆ K :=
   support_subset_iff'.mpr f.zero_on_compl
