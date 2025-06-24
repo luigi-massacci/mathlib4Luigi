@@ -220,6 +220,8 @@ example (K : Compacts E): Continuous (ContDiffMapSupportedIn.toTestFunction 𝕜
     exact le_sInf (by aesop)
   exact le_trans (le_sSup (by aesop)) this
 
+variable {n E F}
+
 protected theorem continuous_iff {V : Type*} [AddCommMonoid V] [Module ℝ V]
   [t : TopologicalSpace V] [LocallyConvexSpace ℝ V] (f : 𝓓^{n}(E, F) →ₗ[ℝ] V) :
     Continuous f ↔
@@ -236,3 +238,45 @@ protected theorem continuous_iff {V : Type*} [AddCommMonoid V] [Module ℝ V]
     simp_rw [← @coinduced_le_iff_le_induced _ _ f _ t, coinduced_compose]
     simp_rw [← continuous_iff_coinduced_le]
     rfl
+
+variable (E F n)
+
+@[simps]
+noncomputable def to_bcfₗ : 𝓓^{n}(E, F) →ₗ[𝕜] E →ᵇ F  where
+  toFun f := f
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+lemma to_bcf_comp_eq (K : Compacts E) :
+  (to_bcfₗ 𝕜 E F n) ∘ (ContDiffMapSupportedIn.toTestFunction 𝕜 E F n K)  =
+    ContDiffMapSupportedIn.to_bcfₗ 𝕜 := by
+    congr
+
+@[simps!]
+noncomputable def to_bcfL : 𝓓^{n}(E, F) →L[ℝ] E →ᵇ F  :=
+  { toLinearMap := to_bcfₗ ℝ E F n
+    cont := show Continuous (to_bcfₗ ℝ E F n)
+      by
+        (
+          rw [TestFunction.continuous_iff ℝ (to_bcfₗ ℝ E F n)]
+          intro K
+          rw [to_bcf_comp_eq _ _]
+          exact (ContDiffMapSupportedIn.to_bcfL 𝕜).continuous
+        )
+  }
+
+variable {E}
+
+section DiracDelta
+
+/-- The Dirac delta distribution -/
+noncomputable def delta (x : E) : 𝓓^{n}(E, F) →L[ℝ] F :=
+  (BoundedContinuousFunction.evalCLM ℝ x).comp (to_bcfL ℝ E F n)
+
+variable {F n}
+
+@[simp]
+theorem delta_apply (x₀ : E) (f : 𝓓^{n}(E, F)) : delta F n x₀ f = f x₀ :=
+  rfl
+
+end DiracDelta
