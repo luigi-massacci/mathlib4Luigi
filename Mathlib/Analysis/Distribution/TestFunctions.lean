@@ -14,7 +14,7 @@ variable {n : ℕ∞}
 
 -- Note: does it make sense to parametrize by some Ω : Opens E?
 -- As opposed to taking the subtype if needed. Seems like most of time we will take the whole space
--- anyway / extend by garbage
+-- anyway / extend by garbage. This would also require to parammetrize D^n_K?
 structure TestFunction (n : ℕ∞) : Type _ where
   protected toFun : E → F
   protected contDiff' : ContDiff ℝ n toFun
@@ -207,6 +207,8 @@ def ContDiffMapSupportedIn.toTestFunction (K : Compacts E) : 𝓓^{n}_{K}(E, F) 
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
+
+
 noncomputable def topologicalSpace0 : TopologicalSpace 𝓓^{n}(E, F) :=
   ⨆ (K : Compacts E), coinduced (ContDiffMapSupportedIn.toTestFunction 𝕜 E F n K) (inferInstance)
 
@@ -222,8 +224,9 @@ example (K : Compacts E): Continuous (ContDiffMapSupportedIn.toTestFunction 𝕜
 
 variable {n E F}
 
-protected theorem continuous_iff {V : Type*} [AddCommMonoid V] [Module ℝ V]
-  [t : TopologicalSpace V] [LocallyConvexSpace ℝ V] (f : 𝓓^{n}(E, F) →ₗ[ℝ] V) :
+protected theorem continuous_iff {V : Type*} [AddCommMonoid V] [Module ℝ V] [Module 𝕜 V]
+  [SMulCommClass ℝ 𝕜 V] [t : TopologicalSpace V] [LocallyConvexSpace ℝ V]
+  (f : 𝓓^{n}(E, F) →ₗ[ℝ] V) :
     Continuous f ↔
     ∀ K : Compacts E, Continuous (f ∘ ContDiffMapSupportedIn.toTestFunction 𝕜 E F n K) := by
     rw [continuous_iff_le_induced]
@@ -253,8 +256,8 @@ lemma to_bcf_comp_eq (K : Compacts E) :
     congr
 
 @[simps!]
-noncomputable def to_bcfL : 𝓓^{n}(E, F) →L[ℝ] E →ᵇ F  :=
-  { toLinearMap := to_bcfₗ ℝ E F n
+noncomputable def to_bcfL : 𝓓^{n}(E, F) →L[𝕜] E →ᵇ F  :=
+  { toLinearMap := to_bcfₗ 𝕜 E F n
     cont := show Continuous (to_bcfₗ ℝ E F n)
       by
         (
@@ -270,13 +273,13 @@ variable {E}
 section DiracDelta
 
 /-- The Dirac delta distribution -/
-noncomputable def delta (x : E) : 𝓓^{n}(E, F) →L[ℝ] F :=
-  (BoundedContinuousFunction.evalCLM ℝ x).comp (to_bcfL ℝ E F n)
+noncomputable def delta (x : E) : 𝓓^{n}(E, F) →L[𝕜] F :=
+  (BoundedContinuousFunction.evalCLM 𝕜 x).comp (to_bcfL 𝕜 E F n)
 
 variable {F n}
 
 @[simp]
-theorem delta_apply (x₀ : E) (f : 𝓓^{n}(E, F)) : delta F n x₀ f = f x₀ :=
+theorem delta_apply (x₀ : E) (f : 𝓓^{n}(E, F)) : delta 𝕜 F n x₀ f = f x₀ :=
   rfl
 
 end DiracDelta
