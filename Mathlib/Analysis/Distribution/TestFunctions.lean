@@ -59,7 +59,6 @@ instance toTestFunctionClass :
 
 variable {E F}
 
-
 protected theorem contDiff (f : 𝓓^{n}(E, F)) : ContDiff ℝ n f := map_contDiff f
 protected theorem compact_supp (f : 𝓓^{n}(E, F)) : HasCompactSupport f := compact_supp f
 
@@ -193,7 +192,8 @@ end AddCommGroup
 
 section Module
 
--- Note: This should probably be used more! the ugy ext ... ext ... is in a lot of places.
+-- Note: This (and above) should probably be used more!
+-- the ugy ext ... ext ... is in a lot of places.
 instance {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F] :
     Module R 𝓓^{n}(E, F) :=
   (coeHom_injective n).module R (coeHom E F n) fun _ _ => rfl
@@ -208,17 +208,23 @@ def ContDiffMapSupportedIn.toTestFunction (K : Compacts E) : 𝓓^{n}_{K}(E, F) 
   map_smul' _ _ := rfl
 
 
+open ContDiffMapSupportedIn
 
-noncomputable def topologicalSpace0 : TopologicalSpace 𝓓^{n}(E, F) :=
-  ⨆ (K : Compacts E), coinduced (ContDiffMapSupportedIn.toTestFunction 𝕜 E F n K) (inferInstance)
+noncomputable def originalTop : TopologicalSpace 𝓓^{n}(E, F) :=
+  ⨆ (K : Compacts E), coinduced (toTestFunction 𝕜 E F n K) (inferInstance)
 
 noncomputable instance topologicalSpace : TopologicalSpace 𝓓^{n}(E, F) :=
   sInf {t : TopologicalSpace 𝓓^{n}(E, F)
-       | topologicalSpace0 ℝ E F n ≤ t ∧ @LocallyConvexSpace ℝ 𝓓^{n}(E, F) _ _ _ _ t}
+       | originalTop ℝ E F n ≤ t ∧ @LocallyConvexSpace ℝ 𝓓^{n}(E, F) _ _ _ _ t}
 
-example (K : Compacts E): Continuous (ContDiffMapSupportedIn.toTestFunction 𝕜 E F n K) := by
+noncomputable instance : LocallyConvexSpace ℝ 𝓓^{n}(E, F) := by
+  apply LocallyConvexSpace.sInf
+  simp only [mem_setOf_eq, and_imp, imp_self, implies_true]
+
+theorem continuous_toTestFunction (K : Compacts E):
+    Continuous (toTestFunction 𝕜 E F n K) := by
   apply continuous_iff_coinduced_le.2
-  have : topologicalSpace0 𝕜 E F n ≤ TestFunction.topologicalSpace E F n := by
+  have : originalTop 𝕜 E F n ≤ TestFunction.topologicalSpace E F n := by
     exact le_sInf (by aesop)
   exact le_trans (le_sSup (by aesop)) this
 
@@ -228,16 +234,16 @@ protected theorem continuous_iff {V : Type*} [AddCommMonoid V] [Module ℝ V] [M
   [SMulCommClass ℝ 𝕜 V] [t : TopologicalSpace V] [LocallyConvexSpace ℝ V]
   (f : 𝓓^{n}(E, F) →ₗ[ℝ] V) :
     Continuous f ↔
-    ∀ K : Compacts E, Continuous (f ∘ ContDiffMapSupportedIn.toTestFunction 𝕜 E F n K) := by
+    ∀ K : Compacts E, Continuous (f ∘ toTestFunction 𝕜 E F n K) := by
     rw [continuous_iff_le_induced]
     have : TestFunction.topologicalSpace E F n ≤ induced f t
-          ↔ topologicalSpace0 ℝ E F n ≤ induced f t := by
+          ↔ originalTop ℝ E F n ≤ induced f t := by
         constructor <;> refine fun h ↦ ?_
         · refine le_trans (le_sInf (fun _ _ ↦ ?_)) h
           simp_all only [LocallyConvexSpace.induced f, mem_setOf_eq]
         · refine sInf_le ?_
           simp only [mem_setOf_eq, LocallyConvexSpace.induced f, and_true, h]
-    rw [this, topologicalSpace0, iSup_le_iff]
+    rw [this, originalTop, iSup_le_iff]
     simp_rw [← @coinduced_le_iff_le_induced _ _ f _ t, coinduced_compose]
     simp_rw [← continuous_iff_coinduced_le]
     rfl
@@ -268,11 +274,32 @@ noncomputable def to_bcfL : 𝓓^{n}(E, F) →L[𝕜] E →ᵇ F  :=
         )
   }
 
-variable {E}
+theorem injective_to_bcfL: Function.Injective (to_bcfL 𝕜 E F n) := by
+  intro f g
+  simp [to_bcfL, to_bcfₗ]
+
+example : T25Space 𝓓^{n}(E, F) :=
+  T25Space.of_injective_continuous (injective_to_bcfL ℝ E F n) (to_bcfL ℝ E F n).continuous
+
+open ContDiffMapSupportedIn in
+theorem continuous_of_commute_toTestFunction {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  (f : 𝓓^{n}(E, F) →ₗ[ℝ] 𝓓^{n}(E, G))
+  (hKg : ∀ K : Compacts E, ∃ g : 𝓓^{n}_{K}(E, F) → 𝓓^{n}_{K}(E, G), Continuous g
+        ∧ f ∘ toTestFunction ℝ E F n K = toTestFunction ℝ E G n K ∘ g) :
+    Continuous f := by
+  refine (TestFunction.continuous_iff ℝ f).mpr (fun K ↦ ?_)
+  obtain ⟨g, hg, hfg⟩ := hKg K
+  exact hfg ▸ (continuous_toTestFunction ℝ E G n K).comp hg
+
+
+-- Sviluppare mkLM, mkCLM
+
+
 
 section DiracDelta
 
-/-- The Dirac delta distribution -/
+variable {E}
+
 noncomputable def delta (x : E) : 𝓓^{n}(E, F) →L[𝕜] F :=
   (BoundedContinuousFunction.evalCLM 𝕜 x).comp (to_bcfL 𝕜 E F n)
 
@@ -283,3 +310,7 @@ theorem delta_apply (x₀ : E) (f : 𝓓^{n}(E, F)) : delta 𝕜 F n x₀ f = f 
   rfl
 
 end DiracDelta
+
+
+
+end TestFunction
