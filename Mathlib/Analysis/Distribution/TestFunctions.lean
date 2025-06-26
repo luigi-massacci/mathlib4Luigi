@@ -17,7 +17,6 @@ variable [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
 variable {n : ℕ∞}
 
-
 -- Q: parametrize by some Ω : Opens E?
 structure TestFunction (n : ℕ∞) : Type _ where
   protected toFun : E → F
@@ -196,8 +195,7 @@ end AddCommGroup
 
 section Module
 
--- Note: This (and above) should probably be used more!
--- the ugy ext ... ext ... is in a lot of places.
+-- TODO: replace ext ... ext... elsewhere where possible
 instance {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F] :
     Module R 𝓓^{n}(E, F) :=
   (coeHom_injective n).module R (coeHom E F n) fun _ _ => rfl
@@ -417,7 +415,6 @@ variable {E}
 noncomputable def delta (x : E) : 𝓓^{n}(E, F) →L[𝕜] F :=
   (BoundedContinuousFunction.evalCLM 𝕜 x).comp (to_bcfL 𝕜 E F n)
 
-
 @[simp]
 theorem delta_apply (x₀ : E) (f : 𝓓^{n}(E, F)) : delta 𝕜 F n x₀ f = f x₀ :=
   rfl
@@ -429,8 +426,16 @@ variable (f : ContDiffBump (![1, 2, 3]: Fin 3 → ℝ))
 #check delta ℝ (Fin 3 → ℂ) 5 (![1, 2, 3]: Fin 3 → ℝ)
 
 
-
 end TestFunction
 
+namespace Distribution
+
+open TestFunction
+
+variable [RCLike 𝕜] [Module ℝ F]
+
+def HasOrder (T : 𝓓^{n}(E, 𝕜) →L[ℝ] F) (m : ℕ) : Prop := sorry
+
+end Distribution
 
 #min_imports
