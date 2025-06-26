@@ -2,6 +2,24 @@ import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 import Mathlib.Data.Complex.Basic
 import Mathlib.Data.Complex.Norm
 import Mathlib.Data.Complex.FiniteDimensional
+import Mathlib.MeasureTheory.MeasurableSpace.Defs
+import Mathlib.MeasureTheory.Measure.MeasureSpaceDef
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
+import Mathlib.Analysis.LocallyConvex.WithSeminorms
+import Mathlib.Analysis.Normed.Group.ZeroAtInfty
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
+import Mathlib.Topology.Algebra.UniformFilterBasis
+import Mathlib.Tactic.MoveAdd
+
+--For testing
+import Mathlib.Analysis.CStarAlgebra.Classes
+import Mathlib.Analysis.InnerProductSpace.Basic
+import Mathlib.Analysis.Calculus.BumpFunction.Basic
+
 
 open TopologicalSpace SeminormFamily Set Function Seminorm UniformSpace
 open scoped BoundedContinuousFunction Topology NNReal
@@ -13,9 +31,7 @@ variable [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCo
 variable {n : ℕ∞}
 
 
--- Note: does it make sense to parametrize by some Ω : Opens E?
--- As opposed to taking the subtype if needed. Seems like most of time we will take the whole space
--- anyway / extend by garbage. This would also require to parammetrize D^n_K?
+-- Q: parametrize by some Ω : Opens E?
 structure TestFunction (n : ℕ∞) : Type _ where
   protected toFun : E → F
   protected contDiff' : ContDiff ℝ n toFun
@@ -124,7 +140,7 @@ lemma add_apply (f g : 𝓓^{n}(E, F)) (x : E) : (f + g) x = f x + g x :=
 instance : Neg 𝓓^{n}(E, F) where
   neg f := TestFunction.mk (-f) (f.contDiff.neg) (f.compact_supp.neg')
 
--- TOOD: add sub to HasCompactSupport in general
+-- TOOD: add HasCompactSupport.sub in general
 instance instSub : Sub 𝓓^{n}(E, F) :=
   ⟨fun f g =>
     ⟨f - g, (f.contDiff').sub (g.contDiff'),
@@ -132,7 +148,7 @@ instance instSub : Sub 𝓓^{n}(E, F) :=
     ⟩
   ⟩
 
--- TOOD: add const_smul to HasCompactSupport (?)
+-- TOOD: add HasCompactSupport.const_smul_left in general
 instance instSMul {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F] :
    SMul R 𝓓^{n}(E, F) :=
   ⟨fun c f ↦
@@ -201,10 +217,20 @@ instance {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstS
 
 end Module
 
+-- Testing:
 
-#synth Module ℂ 𝓓^{n}(E, ℂ)
+variable (S : Compacts (Fin 3 → ℝ))
+-- This shoudl fail:
+-- #synth Module ℂ 𝓓^{5}_{S}(Fin 3 → ℝ, Fin 3 → ℝ)
+#synth Module ℝ 𝓓^{5}_{S}(Fin 3 → ℝ, Fin 3 → ℂ)
 
-variable (n : ℕ∞) (E F)
+#synth Module ℂ 𝓓^{⊤}_{S}(Fin 3 → ℝ, Fin 3 → ℂ)
+
+variable (S': Compacts (Fin 3 → ℂ))
+#synth Module ℂ 𝓓^{⊤}_{S'}(Fin 3 → ℂ, Fin 3 → ℂ)
+
+
+variable (n : ℕ∞) (F)
 
 def ContDiffMapSupportedIn.toTestFunction (K : Compacts E) : 𝓓^{n}_{K}(E, F) →ₗ[𝕜] 𝓓^{n}(E, F) where
   toFun f := TestFunction.mk f (f.contDiff) (f.hasCompactSupport)
@@ -215,20 +241,21 @@ def ContDiffMapSupportedIn.toTestFunction (K : Compacts E) : 𝓓^{n}_{K}(E, F) 
 open ContDiffMapSupportedIn
 
 noncomputable def originalTop : TopologicalSpace 𝓓^{n}(E, F) :=
-  ⨆ (K : Compacts E), coinduced (toTestFunction 𝕜 E F n K) (inferInstance)
+  ⨆ (K : Compacts E), coinduced (toTestFunction 𝕜 F n K) (inferInstance)
 
+variable (E)
 noncomputable instance topologicalSpace : TopologicalSpace 𝓓^{n}(E, F) :=
   sInf {t : TopologicalSpace 𝓓^{n}(E, F)
-       | originalTop ℝ E F n ≤ t ∧ @LocallyConvexSpace ℝ 𝓓^{n}(E, F) _ _ _ _ t}
+       | originalTop ℝ F n ≤ t ∧ @LocallyConvexSpace ℝ 𝓓^{n}(E, F) _ _ _ _ t}
 
 noncomputable instance : LocallyConvexSpace ℝ 𝓓^{n}(E, F) := by
   apply LocallyConvexSpace.sInf
   simp only [mem_setOf_eq, and_imp, imp_self, implies_true]
 
 theorem continuous_toTestFunction (K : Compacts E):
-    Continuous (toTestFunction 𝕜 E F n K) := by
+    Continuous (toTestFunction 𝕜 F n K) := by
   apply continuous_iff_coinduced_le.2
-  have : originalTop 𝕜 E F n ≤ TestFunction.topologicalSpace E F n := by
+  have : originalTop 𝕜 F n ≤ TestFunction.topologicalSpace E F n := by
     exact le_sInf (by aesop)
   exact le_trans (le_sSup (by aesop)) this
 
@@ -241,10 +268,10 @@ protected theorem continuous_iff {V : Type*} [AddCommMonoid V] [Module ℝ V] [M
   [SMulCommClass ℝ 𝕜' V] [t : TopologicalSpace V] [LocallyConvexSpace ℝ V]
   (f : 𝓓^{n}(E, F) →ₗ[ℝ] V) :
     Continuous f ↔
-    ∀ K : Compacts E, Continuous (f ∘ toTestFunction 𝕜 E F n K) := by
+    ∀ K : Compacts E, Continuous (f ∘ toTestFunction 𝕜 F n K) := by
     rw [continuous_iff_le_induced]
     have : TestFunction.topologicalSpace E F n ≤ induced f t
-          ↔ originalTop ℝ E F n ≤ induced f t := by
+          ↔ originalTop ℝ F n ≤ induced f t := by
         constructor <;> refine fun h ↦ ?_
         · refine le_trans (le_sInf (fun _ _ ↦ ?_)) h
           simp_all only [LocallyConvexSpace.induced f, mem_setOf_eq]
@@ -264,7 +291,7 @@ noncomputable def to_bcfₗ : 𝓓^{n}(E, F) →ₗ[𝕜] E →ᵇ F  where
   map_smul' _ _ := rfl
 
 lemma to_bcf_comp_eq (K : Compacts E) :
-  (to_bcfₗ 𝕜 E F n) ∘ (ContDiffMapSupportedIn.toTestFunction 𝕜 E F n K)  =
+  (to_bcfₗ 𝕜 E F n) ∘ (ContDiffMapSupportedIn.toTestFunction 𝕜 F n K)  =
     ContDiffMapSupportedIn.to_bcfₗ 𝕜 := by
     congr
 
@@ -285,9 +312,14 @@ theorem injective_to_bcfL: Function.Injective (to_bcfL 𝕜 E F n) := by
   intro f g
   simp [to_bcfL, to_bcfₗ]
 
-example : T25Space 𝓓^{n}(E, F) :=
-  T25Space.of_injective_continuous (injective_to_bcfL ℝ E F n) (to_bcfL ℝ E F n).continuous
+-- Testing:
+#check to_bcfL ℂ (Fin 3 → ℝ) (Fin 3 → ℂ) 5
 
+#check to_bcfL ℝ (Fin 3 → ℝ) (Fin 3 → ℂ) ⊤
+
+
+theorem T25Space_TestFunction : T25Space 𝓓^{n}(E, F) :=
+  T25Space.of_injective_continuous (injective_to_bcfL ℝ E F n) (to_bcfL ℝ E F n).continuous
 
 variable {G 𝕜': Type*} [NontriviallyNormedField 𝕜']
 variable {σ : 𝕜 →+* 𝕜'}
@@ -295,24 +327,23 @@ variable [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace 𝕜' G] [SMulC
 
 variable {E F n}
 variable (𝕜')
+
 def toTestFunction_comp
   (f : 𝓓^{n}(E, F) → 𝓓^{n}(E, G)) : Prop :=
   ∀ K : Compacts E, ∃ g : 𝓓^{n}_{K}(E, F) → 𝓓^{n}_{K}(E, G), Continuous g
-        ∧ f ∘ toTestFunction 𝕜 E F n K = toTestFunction 𝕜' E G n K ∘ g
+        ∧ f ∘ toTestFunction 𝕜 F n K = toTestFunction 𝕜' G n K ∘ g
 
 open ContDiffMapSupportedIn in
 theorem continuous_of_commute_toTestFunction
   (f : 𝓓^{n}(E, F) →ₗ[ℝ] 𝓓^{n}(E, G))
-  (hc : toTestFunction_comp ℝ ℝ f) :
+  (hc : toTestFunction_comp 𝕜 𝕜' f) :
     Continuous f := by
   refine (TestFunction.continuous_iff ℝ ℝ f).mpr (fun K ↦ ?_)
   obtain ⟨g, hg, hfg⟩ := hc K
   exact hfg ▸ (continuous_toTestFunction ℝ E G n K).comp hg
 
-
-variable {𝕜}
-
-def mkLM (A : 𝓓^{n}(E, F) → 𝓓^{n}(E, G))
+variable {𝕜 𝕜'}
+def mkLM (A : (E → F) → (E → G))
     (hadd : ∀ (f g : 𝓓^{n}(E, F)) (x), A (f + g) x = A f x + A g x)
     (hsmul : ∀ (a : 𝕜) (f : 𝓓^{n}(E, F)) (x), A (a • f) x = σ a • A f x)
     (hsmooth : ∀ f : 𝓓^{n}(E, F), ContDiff ℝ n (A f))
@@ -326,9 +357,75 @@ def mkLM (A : 𝓓^{n}(E, F) → 𝓓^{n}(E, G))
   map_smul' a f := ext (hsmul a f)
 
 
+-- TODO: think about hsmul / hsmul'
+noncomputable def mkCLM [RingHomIsometric σ] (A : (E → F) → (E → G))
+    (hadd : ∀ (f g : 𝓓^{n}(E, F)) (x : E), A (f + g) x = A f x + A g x)
+    (hsmul : ∀ (a : 𝕜) (f : 𝓓^{n}(E, F)) (x : E), A (a • f) x = σ a • A f x)
+    (hsmul' : ∀ (a : ℝ) (f : 𝓓^{n}(E, F)) (x : E), A (a • f) x = a • A f x)
+    (hsmooth : ∀ f : 𝓓^{n}(E, F), ContDiff ℝ n (A f))
+    (hsupp : ∀ f : 𝓓^{n}(E, F), HasCompactSupport (A f))
+    (hcomp : toTestFunction_comp 𝕜 𝕜' (mkLM A hadd hsmul hsmooth hsupp)) :
+    𝓓^{n}(E, F) →SL[σ] 𝓓^{n}(E, G) where
+  cont := continuous_of_commute_toTestFunction 𝕜 𝕜' (mkLM A hadd hsmul' hsmooth hsupp) hcomp
+  toLinearMap := mkLM A hadd hsmul hsmooth hsupp
+
+
+variable (𝕜 E F n)
+noncomputable def fderivCLM : 𝓓^{n}(E, F) →L[𝕜] 𝓓^{n-1}(E, E →L[ℝ] F) :=
+  sorry
+
+-- Pause on derivates because they are painful.
+
+section Integration
+
+open MeasureTheory Module
+
+variable [MeasurableSpace E]
+variable (μ : Measure E)
+
+
+-- Consider just replacing F with RCLike 𝕜
+
+variable {E F}
+noncomputable def integral': 𝓓^{n}(E, F) → F := (∫ x, · x ∂μ)
+
+@[simp]
+lemma integral'_apply (f : 𝓓^{n}(E, F)) : integral' n μ f = (∫ x, f x ∂μ) := by
+  rfl
+
+variable [BorelSpace E] [IsFiniteMeasureOnCompacts μ]
+
+lemma map_integrable (f : 𝓓^{n}(E, F)) : Integrable f μ  := by
+  apply Continuous.integrable_of_hasCompactSupport (map_continuous f) (compact_supp f)
+
+variable [SecondCountableTopology E]
+
+noncomputable def integral'ₗ : 𝓓^{n}(E, F) →ₗ[𝕜] F :=
+  { toFun := integral' n μ
+    map_add' := fun f g ↦ integral_add (f.map_integrable n μ) (g.map_integrable n μ)
+    map_smul' := fun c f ↦ integral_smul c f}
+
+variable [CompleteSpace F]
+
+@[simps! apply]
+noncomputable def integral'L : 𝓓^{n}(E, F) →L[𝕜] F where
+  toLinearMap := (integral'ₗ 𝕜 n μ : 𝓓^{n}(E, F) →ₗ[𝕜] F)
+  cont := show Continuous (integral'ₗ ℝ n μ) by
+    (
+      rw [TestFunction.continuous_iff ℝ 𝕜 (integral'ₗ ℝ n μ)]
+      intro K
+      set int : (E →ᵇ F) →L[𝕜] F := sorry
+      have : integral'ₗ ℝ n μ ∘ (toTestFunction ℝ F n K)
+          = int ∘ (ContDiffMapSupportedIn.to_bcfL 𝕜) := sorry
+      rw [this]
+      exact int.continuous.comp (ContDiffMapSupportedIn.to_bcfL 𝕜).continuous
+    )
+
+end Integration
+
 section DiracDelta
 
-variable (𝕜 F n)
+variable {E}
 
 noncomputable def delta (x : E) : 𝓓^{n}(E, F) →L[𝕜] F :=
   (BoundedContinuousFunction.evalCLM 𝕜 x).comp (to_bcfL 𝕜 E F n)
@@ -339,6 +436,10 @@ theorem delta_apply (x₀ : E) (f : 𝓓^{n}(E, F)) : delta 𝕜 F n x₀ f = f 
   rfl
 
 end DiracDelta
+
+variable (f : ContDiffBump (![1, 2, 3]: Fin 3 → ℝ))
+
+#check delta ℝ (Fin 3 → ℂ) 5 (![1, 2, 3]: Fin 3 → ℝ)
 
 
 
