@@ -1,6 +1,16 @@
 import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.LineDeriv.Basic
+import Mathlib.Analysis.LocallyConvex.WithSeminorms
+import Mathlib.Analysis.Normed.Group.ZeroAtInfty
+import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
+import Mathlib.Topology.Algebra.UniformFilterBasis
+import Mathlib.Tactic.MoveAdd
+
 
 --For testing
 import Mathlib.Analysis.CStarAlgebra.Classes
@@ -233,6 +243,32 @@ noncomputable instance topologicalSpace : TopologicalSpace 𝓓^{n}(E, F) :=
   sInf {t : TopologicalSpace 𝓓^{n}(E, F)
        | originalTop ℝ F n ≤ t ∧ @LocallyConvexSpace ℝ 𝓓^{n}(E, F) _ _ _ _ t}
 
+
+noncomputable def seminorm : Seminorm 𝕜 𝓓^{n}(E, F) :=
+  sorry
+
+def TestFunctionSeminormFamily : SeminormFamily 𝕜 𝓓^{n}(E, F) (Compacts E) :=
+  sorry
+
+theorem TestFunction_WithSeminorms : WithSeminorms (TestFunctionSeminormFamily 𝕜 E F n) := by
+  sorry
+
+instance instContinuousSMul : ContinuousSMul 𝕜 𝓓^{n}(E, F) := by
+  rw [(TestFunction_WithSeminorms 𝕜 E F n).withSeminorms_eq]
+  exact (TestFunctionSeminormFamily 𝕜 E F n).moduleFilterBasis.continuousSMul
+
+-- TODO: Obviously cannot register any of the following as instances for 𝕜
+-- (cannot reasonably synthetize it), so what now?
+instance instIsTopologicalAddGroup : IsTopologicalAddGroup 𝓓^{n}(E, F) := by
+  rw [(TestFunction_WithSeminorms ℝ E F n).withSeminorms_eq]
+  exact (TestFunctionSeminormFamily ℝ E F n).addGroupFilterBasis.isTopologicalAddGroup
+
+instance instUniformSpace : UniformSpace 𝓓^{n}(E, F) := by
+  exact (TestFunctionSeminormFamily ℝ E F n).addGroupFilterBasis.uniformSpace
+
+instance instIsUniformAddGroup : IsUniformAddGroup 𝓓^{n}(E, F) :=
+  (TestFunctionSeminormFamily ℝ E F n).addGroupFilterBasis.isUniformAddGroup
+
 noncomputable instance : LocallyConvexSpace ℝ 𝓓^{n}(E, F) := by
   apply LocallyConvexSpace.sInf
   simp only [mem_setOf_eq, and_imp, imp_self, implies_true]
@@ -399,7 +435,10 @@ noncomputable def integral'L : 𝓓^{n}(E, F) →L[𝕜] F where
     (
       rw [TestFunction.continuous_iff ℝ 𝕜 (integral'ₗ ℝ n μ)]
       intro K
-      set int : (E →ᵇ F) →L[𝕜] F := sorry
+      have : IsFiniteMeasure (μ.restrict K) := by
+        have : Fact (μ K < ⊤) := fact_iff.mpr <| IsCompact.measure_lt_top (Compacts.isCompact K)
+        apply MeasureTheory.Restrict.isFiniteMeasure
+      set int : (E →ᵇ F) →L[𝕜] F := by sorry
       have : integral'ₗ ℝ n μ ∘ (toTestFunction ℝ F n K)
           = int ∘ (ContDiffMapSupportedIn.to_bcfL 𝕜) := sorry
       rw [this]
