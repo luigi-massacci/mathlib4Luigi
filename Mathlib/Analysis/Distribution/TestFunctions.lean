@@ -4,7 +4,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Topology.Algebra.UniformFilterBasis
 import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
 import Mathlib.MeasureTheory.Integral.Bochner.Set
-
+import Mathlib.MeasureTheory.Measure.Dirac
 --For testing
 import Mathlib.Analysis.CStarAlgebra.Classes
 import Mathlib.Analysis.InnerProductSpace.Basic
@@ -502,6 +502,16 @@ noncomputable def delta (x : E) : 𝓓^{n}(E, F) →L[𝕜] F :=
 @[simp]
 theorem delta_apply (x₀ : E) (f : 𝓓^{n}(E, F)) : delta 𝕜 F n x₀ f = f x₀ :=
   rfl
+
+open MeasureTheory Measure
+
+variable [MeasurableSpace E] [BorelSpace E]
+variable [SecondCountableTopology F] [MeasurableSpace F] [BorelSpace F]
+variable [CompleteSpace F]
+/-- Integrating against the Dirac measure is equal to the delta distribution. -/
+@[simp]
+theorem integralCLM_dirac_eq_delta (x : E) : integral'L 𝕜 n (dirac x) = delta 𝕜 F n x := by
+  aesop
 
 end DiracDelta
 
