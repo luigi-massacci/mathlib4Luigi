@@ -2,6 +2,7 @@ import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Topology.Algebra.UniformFilterBasis
+import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
 
 
 --For testing
@@ -396,7 +397,6 @@ open MeasureTheory Module
 variable [MeasurableSpace E]
 variable (μ : Measure E)
 
-
 -- Consider just replacing F with RCLike 𝕜
 
 variable {E F}
@@ -411,7 +411,7 @@ variable [BorelSpace E] [IsFiniteMeasureOnCompacts μ]
 lemma map_integrable (f : 𝓓^{n}(E, F)) : Integrable f μ  := by
   apply Continuous.integrable_of_hasCompactSupport (map_continuous f) (compact_supp f)
 
-variable [SecondCountableTopology E]
+variable [SecondCountableTopology E] [SecondCountableTopology F] [MeasurableSpace F] [BorelSpace F]
 
 noncomputable def integral'ₗ : 𝓓^{n}(E, F) →ₗ[𝕜] F :=
   { toFun := integral' n μ
@@ -427,10 +427,40 @@ noncomputable def integral'L : 𝓓^{n}(E, F) →L[𝕜] F where
     (
       rw [TestFunction.continuous_iff ℝ 𝕜 (integral'ₗ ℝ n μ)]
       intro K
-      have : IsFiniteMeasure (μ.restrict K) := by
+      have fin_μ : IsFiniteMeasure (μ.restrict K) := by
         have : Fact (μ K < ⊤) := fact_iff.mpr <| IsCompact.measure_lt_top (Compacts.isCompact K)
         apply MeasureTheory.Restrict.isFiniteMeasure
-      set int : (E →ᵇ F) →L[𝕜] F := by sorry
+      set int' : (E →ᵇ F) →ₗ[𝕜] F := {
+          toFun := fun f => (∫ x, f x ∂(μ.restrict K))
+          map_add' := by
+            intro f g
+            apply integral_add
+            · exact BoundedContinuousFunction.integrable (μ.restrict ↑K) f
+            · exact BoundedContinuousFunction.integrable (μ.restrict ↑K) g
+          map_smul' := fun c f ↦ integral_smul c f
+        }
+      have : IsBoundedLinearMap 𝕜 int' := by
+        constructor
+        · exact LinearMap.isLinear int'
+        · by_cases h : (μ.restrict K) = 0
+          · use 1
+            refine ⟨zero_lt_one, fun f ↦ ?_⟩
+            simp [int', h]
+          · use (MeasureTheory.measureUnivNNReal (μ.restrict K))
+            constructor
+            · apply_mod_cast @MeasureTheory.measureUnivNNReal_pos _ _ _ fin_μ
+              exact h
+            · intro f
+              simp [int']
+              apply le_trans (BoundedContinuousFunction.norm_integral_le_mul_norm _ f)
+              gcongr
+              apply le_of_eq
+              rfl
+      set int : (E →ᵇ F) →L[𝕜] F :=
+        { toLinearMap := int'
+          cont := by
+            apply IsBoundedLinearMap.continuous this  }
+
       have : integral'ₗ ℝ n μ ∘ (toTestFunction ℝ F n K)
           = int ∘ (ContDiffMapSupportedIn.to_bcfL 𝕜) := sorry
       rw [this]
