@@ -3,7 +3,7 @@ import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Topology.Algebra.UniformFilterBasis
 import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
-
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 --For testing
 import Mathlib.Analysis.CStarAlgebra.Classes
@@ -416,6 +416,14 @@ variable [BorelSpace E] [IsFiniteMeasureOnCompacts μ]
 lemma map_integrable (f : 𝓓^{n}(E, F)) : Integrable f μ  := by
   apply Continuous.integrable_of_hasCompactSupport (map_continuous f) (compact_supp f)
 
+variable {K : Compacts E}
+
+
+-- TODO: move to ContDiffMapSupportedIn
+lemma map_integrable' (f : 𝓓^{n}_{K}(E, F)) : Integrable f μ  := by
+  apply Continuous.integrable_of_hasCompactSupport (map_continuous f) (f.hasCompactSupport)
+
+
 variable [SecondCountableTopology E] [SecondCountableTopology F] [MeasurableSpace F] [BorelSpace F]
 
 noncomputable def integral'ₗ : 𝓓^{n}(E, F) →ₗ[𝕜] F :=
@@ -465,9 +473,19 @@ noncomputable def integral'L : 𝓓^{n}(E, F) →L[𝕜] F where
         { toLinearMap := int'
           cont := by
             apply IsBoundedLinearMap.continuous this  }
-
       have : integral'ₗ ℝ n μ ∘ (toTestFunction ℝ F n K)
-          = int ∘ (ContDiffMapSupportedIn.to_bcfL 𝕜) := sorry
+          = int ∘ (ContDiffMapSupportedIn.to_bcfL 𝕜) := by
+        ext f
+        simp [integral'ₗ, int, int']
+        have hK : MeasurableSet (K : Set E) := by
+          refine IsCompact.measurableSet ?_
+          exact Compacts.isCompact K
+        have : ∫ (x : E) in (K : Set E)ᶜ, f x ∂μ = 0 := by
+          refine setIntegral_eq_zero_of_forall_eq_zero ?_
+          exact f.zero_on_compl
+        rw [← add_zero (∫ (x : E) in ↑K, f x ∂μ), ← this,
+          MeasureTheory.integral_add_compl hK (map_integrable' n μ f)]
+        congr
       rw [this]
       exact int.continuous.comp (ContDiffMapSupportedIn.to_bcfL 𝕜).continuous
     )
