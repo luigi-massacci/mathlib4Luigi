@@ -236,6 +236,8 @@ noncomputable instance topologicalSpace : TopologicalSpace 𝓓^{n}(E, F) :=
   sInf {t : TopologicalSpace 𝓓^{n}(E, F)
        | originalTop ℝ F n ≤ t ∧ @LocallyConvexSpace ℝ 𝓓^{n}(E, F) _ _ _ _ t}
 
+---------------------------------------------------------------------------------------------------
+-- This part is self-contained
 
 noncomputable def seminorm : Seminorm 𝕜 𝓓^{n}(E, F) :=
   sorry
@@ -261,6 +263,9 @@ instance instUniformSpace : UniformSpace 𝓓^{n}(E, F) := by
 
 instance instIsUniformAddGroup : IsUniformAddGroup 𝓓^{n}(E, F) :=
   (TestFunctionSeminormFamily ℝ E F n).addGroupFilterBasis.isUniformAddGroup
+
+
+--------------------------------------------------------------------------------------------
 
 noncomputable instance : LocallyConvexSpace ℝ 𝓓^{n}(E, F) := by
   apply LocallyConvexSpace.sInf
