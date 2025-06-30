@@ -1,10 +1,5 @@
-import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
-import Mathlib.MeasureTheory.Function.LocallyIntegrable
-import Mathlib.MeasureTheory.Integral.Bochner.Basic
-import Mathlib.Topology.Algebra.UniformFilterBasis
-import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
-import Mathlib.MeasureTheory.Integral.Bochner.Set
-import Mathlib.MeasureTheory.Measure.Dirac
+import Mathlib
+
 --For testing
 import Mathlib.Analysis.CStarAlgebra.Classes
 import Mathlib.Analysis.InnerProductSpace.Basic
@@ -405,10 +400,10 @@ variable (μ : Measure E)
 -- Consider just replacing F with RCLike 𝕜
 
 variable {E F}
-noncomputable def integral': 𝓓^{n}(E, F) → F := (∫ x, · x ∂μ)
+noncomputable def ofMeasure: 𝓓^{n}(E, F) → F := (∫ x, · x ∂μ)
 
 @[simp]
-lemma integral'_apply (f : 𝓓^{n}(E, F)) : integral' n μ f = (∫ x, f x ∂μ) := by
+lemma ofMeasure_apply (f : 𝓓^{n}(E, F)) : ofMeasure n μ f = (∫ x, f x ∂μ) := by
   rfl
 
 variable [BorelSpace E] [IsFiniteMeasureOnCompacts μ]
@@ -426,19 +421,21 @@ lemma map_integrable' (f : 𝓓^{n}_{K}(E, F)) : Integrable f μ  := by
 
 variable [SecondCountableTopology E] [SecondCountableTopology F] [MeasurableSpace F] [BorelSpace F]
 
-noncomputable def integral'ₗ : 𝓓^{n}(E, F) →ₗ[𝕜] F :=
-  { toFun := integral' n μ
+noncomputable def ofMeasureₗ : 𝓓^{n}(E, F) →ₗ[𝕜] F :=
+  { toFun := ofMeasure n μ
     map_add' := fun f g ↦ integral_add (f.map_integrable n μ) (g.map_integrable n μ)
     map_smul' := fun c f ↦ integral_smul c f}
 
 variable [CompleteSpace F]
 
+
+--TODO : Spin off continuity of integration
 @[simps! apply]
-noncomputable def integral'L : 𝓓^{n}(E, F) →L[𝕜] F where
-  toLinearMap := (integral'ₗ 𝕜 n μ : 𝓓^{n}(E, F) →ₗ[𝕜] F)
-  cont := show Continuous (integral'ₗ ℝ n μ) by
+noncomputable def ofMeasureL : 𝓓^{n}(E, F) →L[𝕜] F where
+  toLinearMap := (ofMeasureₗ 𝕜 n μ : 𝓓^{n}(E, F) →ₗ[𝕜] F)
+  cont := show Continuous (ofMeasureₗ ℝ n μ) by
     (
-      rw [TestFunction.continuous_iff ℝ 𝕜 (integral'ₗ ℝ n μ)]
+      rw [TestFunction.continuous_iff ℝ 𝕜 (ofMeasureₗ ℝ n μ)]
       intro K
       have fin_μ : IsFiniteMeasure (μ.restrict K) := by
         have : Fact (μ K < ⊤) := fact_iff.mpr <| IsCompact.measure_lt_top (Compacts.isCompact K)
@@ -473,10 +470,10 @@ noncomputable def integral'L : 𝓓^{n}(E, F) →L[𝕜] F where
         { toLinearMap := int'
           cont := by
             apply IsBoundedLinearMap.continuous this  }
-      have : integral'ₗ ℝ n μ ∘ (toTestFunction ℝ F n K)
+      have : ofMeasureₗ ℝ n μ ∘ (toTestFunction ℝ F n K)
           = int ∘ (ContDiffMapSupportedIn.to_bcfL 𝕜) := by
         ext f
-        simp [integral'ₗ, int, int']
+        simp [ofMeasureₗ, int, int']
         have hK : MeasurableSet (K : Set E) := by
           refine IsCompact.measurableSet ?_
           exact Compacts.isCompact K
@@ -490,7 +487,71 @@ noncomputable def integral'L : 𝓓^{n}(E, F) →L[𝕜] F where
       exact int.continuous.comp (ContDiffMapSupportedIn.to_bcfL 𝕜).continuous
     )
 
+
 end Integration
+
+
+section LocallyIntegrable
+
+
+open MeasureTheory Module
+
+variable [MeasurableSpace E]
+variable (μ : Measure E)
+
+variable [NormedSpace ℝ 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] [ContinuousConstSMul 𝕜 F]
+
+variable {E F}
+
+-- At this stage, probably easier to assume RCLike 𝕜 everywhere
+variable [Module 𝕜 F] [SMulCommClass ℝ 𝕜 F] [ContinuousConstSMul 𝕜 F] [IsScalarTower ℝ 𝕜 F]
+-- Q: Remove hf at this stage?
+noncomputable def ofLocallyIntegrable (f : E → F)  :
+    𝓓^{n}(E, 𝕜) → F := fun φ : 𝓓^{n}(E, 𝕜) ↦ (∫ x, (φ x) • (f x) ∂μ)
+
+@[simp]
+lemma ofLocallyIntegrable_apply (f : E → F) (φ : 𝓓^{n}(E, 𝕜)) :
+    ofLocallyIntegrable 𝕜 n μ f φ = (∫ x, (φ x) • (f x) ∂μ) := by
+  rfl
+
+variable [OpensMeasurableSpace E]
+
+-- TODO: Generalize lemma to 𝕜
+-- Note: restricting to ℝ to use the lemma.
+lemma ofLocallyIntegrable_integrable {f : E → F} (hf : LocallyIntegrable f μ) (φ : 𝓓^{n}(E, ℝ)) :
+    Integrable (fun x ↦ (φ x) • (f x)) μ := by
+  apply MeasureTheory.LocallyIntegrable.integrable_smul_left_of_hasCompactSupport hf
+          (map_continuous φ) (compact_supp φ)
+
+-- TODO: This fails to synthetize Module 𝕜 𝓓^{n}(E, 𝕜), so fixing map to be ℝ-linear.
+-- (Having 𝓓^{n}(E, 𝕜) otherwise works, see note on ofLocallyIntegrable_integrable for why it is
+-- fixed to ℝ.)
+noncomputable def ofLocallyIntegrableₗ {f : E → F} (hf : LocallyIntegrable f μ) :
+    𝓓^{n}(E, ℝ) →ₗ[ℝ] F :=
+  { toFun := ofLocallyIntegrable ℝ n μ f
+    map_add' := fun φ Φ  ↦ by
+      simp only [ofLocallyIntegrable_apply, add_apply]
+      simp_rw [add_smul]
+      apply integral_add (ofLocallyIntegrable_integrable n μ hf φ)
+        (ofLocallyIntegrable_integrable n μ hf Φ)
+    map_smul' := fun c φ ↦ by
+      simp only [ofLocallyIntegrable_apply, smul_apply, RingHom.id_apply]
+      simp_rw [smul_assoc, integral_smul c (fun x ↦  φ x • f x)]
+  }
+
+@[simps! apply]
+noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f μ) :
+    𝓓^{n}(E, ℝ) →L[ℝ] F where
+  toLinearMap := (ofLocallyIntegrableₗ n μ hf : 𝓓^{n}(E, ℝ) →ₗ[ℝ] F)
+  cont := show Continuous (ofLocallyIntegrableₗ n μ hf) by
+    (
+        rw [TestFunction.continuous_iff ℝ ℝ (ofLocallyIntegrableₗ n μ hf)]
+        intro K
+        sorry
+    )
+
+end LocallyIntegrable
+
 
 section DiracDelta
 
@@ -510,7 +571,7 @@ variable [SecondCountableTopology F] [MeasurableSpace F] [BorelSpace F]
 variable [CompleteSpace F]
 /-- Integrating against the Dirac measure is equal to the delta distribution. -/
 @[simp]
-theorem integralCLM_dirac_eq_delta (x : E) : integral'L 𝕜 n (dirac x) = delta 𝕜 F n x := by
+theorem integralCLM_dirac_eq_delta (x : E) : ofMeasureL 𝕜 n (dirac x) = delta 𝕜 F n x := by
   aesop
 
 end DiracDelta
