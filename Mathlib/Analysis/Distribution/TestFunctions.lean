@@ -1,4 +1,5 @@
 import Mathlib
+import Mathlib.Algebra.Group.Action.Defs
 
 --For testing
 import Mathlib.Analysis.CStarAlgebra.Classes
@@ -220,6 +221,10 @@ def ContDiffMapSupportedIn.toTestFunction (K : Compacts E) : 𝓓^{n}_{K}(E, F) 
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
+def ContDiffMapSupportedIn.toTestFunction_apply {K : Compacts E} (f : 𝓓^{n}_{K}(E, F)) (x : E):
+  (toTestFunction 𝕜 F n K f) x = f x := rfl
+
+
 
 open ContDiffMapSupportedIn
 
@@ -438,7 +443,7 @@ noncomputable def ofMeasureL : 𝓓^{n}(E, F) →L[𝕜] F where
       rw [TestFunction.continuous_iff ℝ 𝕜 (ofMeasureₗ ℝ n μ)]
       intro K
       have fin_μ : IsFiniteMeasure (μ.restrict K) := by
-        have : Fact (μ K < ⊤) := fact_iff.mpr <| IsCompact.measure_lt_top (Compacts.isCompact K)
+        have : Fact (μ K < ⊤) := fact_iff.mpr <| K.isCompact.measure_lt_top
         apply MeasureTheory.Restrict.isFiniteMeasure
       set int' : (E →ᵇ F) →ₗ[𝕜] F := {
           toFun := fun f => (∫ x, f x ∂(μ.restrict K))
@@ -475,8 +480,7 @@ noncomputable def ofMeasureL : 𝓓^{n}(E, F) →L[𝕜] F where
         ext f
         simp [ofMeasureₗ, int, int']
         have hK : MeasurableSet (K : Set E) := by
-          refine IsCompact.measurableSet ?_
-          exact Compacts.isCompact K
+          refine K.isCompact.measurableSet
         have : ∫ (x : E) in (K : Set E)ᶜ, f x ∂μ = 0 := by
           refine setIntegral_eq_zero_of_forall_eq_zero ?_
           exact f.zero_on_compl
@@ -502,6 +506,8 @@ variable (μ : Measure E)
 variable [NormedSpace ℝ 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] [ContinuousConstSMul 𝕜 F]
 
 variable {E F}
+
+
 
 -- At this stage, probably easier to assume RCLike 𝕜 everywhere
 variable [Module 𝕜 F] [SMulCommClass ℝ 𝕜 F] [ContinuousConstSMul 𝕜 F] [IsScalarTower ℝ 𝕜 F]
@@ -539,6 +545,9 @@ noncomputable def ofLocallyIntegrableₗ {f : E → F} (hf : LocallyIntegrable f
       simp_rw [smul_assoc, integral_smul c (fun x ↦  φ x • f x)]
   }
 
+variable [IsFiniteMeasureOnCompacts μ] [SecondCountableTopology E]
+
+open LocallyIntegrableOn Integrable MeasureTheory
 @[simps! apply]
 noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f μ) :
     𝓓^{n}(E, ℝ) →L[ℝ] F where
@@ -547,7 +556,82 @@ noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f �
     (
         rw [TestFunction.continuous_iff ℝ ℝ (ofLocallyIntegrableₗ n μ hf)]
         intro K
-        sorry
+        set int' : (E →ᵇ ℝ) →ₗ[ℝ] F := {
+            toFun := fun φ ↦ ∫ x, (φ x) • ((K : Set E).indicator f x) ∂μ
+            map_add' := by
+              intro φ Φ
+              have h: ∀ φ : (E →ᵇ ℝ), Integrable (fun x ↦ (φ x) • ((K : Set E).indicator f x)) μ := by
+                intro φ
+                have : support (fun x ↦ (φ x) • ((K : Set E).indicator f x)) ⊆ K := by
+                  aesop
+                rw [← integrableOn_iff_integrable_of_support_subset this]
+                apply MeasureTheory.IntegrableOn.continuousOn_smul
+                · refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
+                  refine integrableOn_isCompact (?_) K.isCompact
+                  rw [MeasureTheory.locallyIntegrableOn_iff_locallyIntegrable_restrict]
+                  rw [MeasureTheory.Measure.restrict_restrict]
+                  simp
+                  rw [← MeasureTheory.locallyIntegrableOn_iff_locallyIntegrable_restrict]
+                  apply MeasureTheory.LocallyIntegrable.locallyIntegrableOn (hf) K
+                  · exact K.isCompact.isClosed
+                  · exact K.isCompact.measurableSet
+                  · exact K.isCompact.isClosed
+                · exact φ.continuous.continuousOn
+                · exact K.isCompact
+              simp only [BoundedContinuousFunction.coe_add, Pi.add_apply]
+              simp_rw [add_smul, integral_add (h φ) (h Φ)]
+            map_smul' :=  fun c φ ↦ by
+              simp only [BoundedContinuousFunction.coe_smul, RingHom.id_apply]
+              rw [← integral_smul c (fun (x : E) ↦  φ x • (K : Set E).indicator f x)]
+              simp_rw [smul_assoc]
+        }
+        have : IsBoundedLinearMap ℝ int' := by
+          constructor
+          · exact LinearMap.isLinear int'
+          · set M := ∫ x, ‖(K : Set E).indicator f x‖∂μ
+            use M + 1
+            constructor
+            · refine add_pos_of_nonneg_of_pos ?_ (Real.zero_lt_one)
+              · refine le_trans ?_ (MeasureTheory.norm_integral_le_integral_norm _)
+                exact norm_nonneg _
+            · intro φ
+              simp [int']
+              set g : E → ℝ := fun x ↦ ‖φ‖ * ‖(K : Set E).indicator f x‖
+              have hg : Integrable g μ := by
+                apply Integrable.const_mul (Integrable.norm ?_)
+                refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
+                refine integrableOn_isCompact (hf.locallyIntegrableOn K) K.isCompact
+              have hgf : ∀ᵐ (x : E) ∂μ, ‖(fun a ↦ (φ a) • (K : Set E).indicator f a) x‖ ≤ g x := by
+                apply ae_of_all
+                intro x
+                simp only [g, int', norm_smul]
+                gcongr
+                exact BoundedContinuousFunction.norm_coe_le_norm φ x
+              apply le_trans (MeasureTheory.norm_integral_le_of_norm_le hg hgf)
+              simp only [g, int']
+              rw [integral_const_mul_of_integrable]
+              · rw [mul_comm]
+                gcongr
+                simp only [le_add_iff_nonneg_right, zero_le_one, M, g, int']
+              · apply Integrable.norm ?_
+                refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
+                refine integrableOn_isCompact (hf.locallyIntegrableOn K) K.isCompact
+        set int : (E →ᵇ ℝ) →L[ℝ] F :=
+          { toLinearMap := int'
+            cont := by
+              apply IsBoundedLinearMap.continuous this  }
+        have : ofLocallyIntegrableₗ n μ hf ∘ (toTestFunction ℝ ℝ n K)
+          = int ∘ ((ContDiffMapSupportedIn.to_bcfL ℝ)):= by
+            ext φ
+            simp [ofLocallyIntegrableₗ, int, int']
+            congr
+            ext x
+            simp [toTestFunction_apply]
+            by_cases h : x ∈ K
+            · simp [h]
+            · simp [h, φ.zero_on_compl h]
+        rw [this]
+        exact int.continuous.comp ((ContDiffMapSupportedIn.to_bcfL ℝ)).continuous
     )
 
 end LocallyIntegrable
