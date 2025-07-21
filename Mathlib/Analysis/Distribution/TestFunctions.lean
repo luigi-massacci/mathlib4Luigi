@@ -125,6 +125,10 @@ lemma add_apply (f g : 𝓓^{n}(E, F)) (x : E) : (f + g) x = f x + g x :=
 instance : Neg 𝓓^{n}(E, F) where
   neg f := TestFunction.mk (-f) (f.contDiff.neg) (f.compact_supp.neg')
 
+theorem HasCompactSupport.sub {α β : Type*} [TopologicalSpace α] [SubtractionMonoid β] {f f' : α → β}
+  (hf : HasCompactSupport f) (hf' : HasCompactSupport f') : HasCompactSupport (f - f') :=
+    sub_eq_add_neg f f' ▸ hf.add hf'.neg'
+
 -- TOOD: add HasCompactSupport.sub in general
 instance instSub : Sub 𝓓^{n}(E, F) :=
   ⟨fun f g =>
@@ -208,7 +212,7 @@ variable (S : Compacts (Fin 3 → ℝ))
 -- #synth Module ℂ 𝓓^{5}_{S}(Fin 3 → ℝ, Fin 3 → ℝ)
 #synth Module ℝ 𝓓^{5}_{S}(Fin 3 → ℝ, Fin 3 → ℂ)
 
-#synth Module ℂ 𝓓^{⊤}_{S}(Fin 3 → ℝ, Fin 3 → ℂ)
+#synth Module ℂ 𝓓^{⊤}_{S}(Fin 3 → ℝ, Fin 9 → ℂ)
 
 variable (S': Compacts (Fin 3 → ℂ))
 #synth Module ℂ 𝓓^{⊤}_{S'}(Fin 3 → ℂ, Fin 3 → ℂ)
@@ -236,36 +240,36 @@ noncomputable instance topologicalSpace : TopologicalSpace 𝓓^{n}(E, F) :=
   sInf {t : TopologicalSpace 𝓓^{n}(E, F)
        | originalTop ℝ F n ≤ t ∧ @LocallyConvexSpace ℝ 𝓓^{n}(E, F) _ _ _ _ t}
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------
 -- This part is self-contained
 
-noncomputable def seminorm : Seminorm 𝕜 𝓓^{n}(E, F) :=
-  sorry
+-- noncomputable def seminorm : Seminorm 𝕜 𝓓^{n}(E, F) :=
+--   sorry
 
-def TestFunctionSeminormFamily : SeminormFamily 𝕜 𝓓^{n}(E, F) (Compacts E) :=
-  sorry
+-- def TestFunctionSeminormFamily : SeminormFamily 𝕜 𝓓^{n}(E, F) (Compacts E) :=
+--   sorry
 
-theorem TestFunction_WithSeminorms : WithSeminorms (TestFunctionSeminormFamily 𝕜 E F n) := by
-  sorry
+-- theorem TestFunction_WithSeminorms : WithSeminorms (TestFunctionSeminormFamily 𝕜 E F n) := by
+--   sorry
 
-instance instContinuousSMul : ContinuousSMul 𝕜 𝓓^{n}(E, F) := by
-  rw [(TestFunction_WithSeminorms 𝕜 E F n).withSeminorms_eq]
-  exact (TestFunctionSeminormFamily 𝕜 E F n).moduleFilterBasis.continuousSMul
+-- instance instContinuousSMul : ContinuousSMul 𝕜 𝓓^{n}(E, F) := by
+--   rw [(TestFunction_WithSeminorms 𝕜 E F n).withSeminorms_eq]
+--   exact (TestFunctionSeminormFamily 𝕜 E F n).moduleFilterBasis.continuousSMul
 
--- TODO: Obviously cannot register any of the following as instances for 𝕜
--- (cannot reasonably synthetize it), so what now?
-instance instIsTopologicalAddGroup : IsTopologicalAddGroup 𝓓^{n}(E, F) := by
-  rw [(TestFunction_WithSeminorms ℝ E F n).withSeminorms_eq]
-  exact (TestFunctionSeminormFamily ℝ E F n).addGroupFilterBasis.isTopologicalAddGroup
+-- -- TODO: Obviously cannot register any of the following as instances for 𝕜
+-- -- (cannot reasonably synthetize it), so what now?
+-- instance instIsTopologicalAddGroup : IsTopologicalAddGroup 𝓓^{n}(E, F) := by
+--   rw [(TestFunction_WithSeminorms ℝ E F n).withSeminorms_eq]
+--   exact (TestFunctionSeminormFamily ℝ E F n).addGroupFilterBasis.isTopologicalAddGroup
 
-instance instUniformSpace : UniformSpace 𝓓^{n}(E, F) := by
-  exact (TestFunctionSeminormFamily ℝ E F n).addGroupFilterBasis.uniformSpace
+-- instance instUniformSpace : UniformSpace 𝓓^{n}(E, F) := by
+--   exact (TestFunctionSeminormFamily ℝ E F n).addGroupFilterBasis.uniformSpace
 
-instance instIsUniformAddGroup : IsUniformAddGroup 𝓓^{n}(E, F) :=
-  (TestFunctionSeminormFamily ℝ E F n).addGroupFilterBasis.isUniformAddGroup
+-- instance instIsUniformAddGroup : IsUniformAddGroup 𝓓^{n}(E, F) :=
+--   (TestFunctionSeminormFamily ℝ E F n).addGroupFilterBasis.isUniformAddGroup
 
 
---------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------
 
 noncomputable instance : LocallyConvexSpace ℝ 𝓓^{n}(E, F) := by
   apply LocallyConvexSpace.sInf
@@ -402,7 +406,6 @@ open MeasureTheory Module
 variable [MeasurableSpace E]
 variable (μ : Measure E)
 
--- Consider just replacing F with RCLike 𝕜
 
 variable {E F}
 noncomputable def ofMeasure: 𝓓^{n}(E, F) → F := (∫ x, · x ∂μ)
@@ -560,7 +563,8 @@ noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f �
             toFun := fun φ ↦ ∫ x, (φ x) • ((K : Set E).indicator f x) ∂μ
             map_add' := by
               intro φ Φ
-              have h: ∀ φ : (E →ᵇ ℝ), Integrable (fun x ↦ (φ x) • ((K : Set E).indicator f x)) μ := by
+              have h: ∀ φ : (E →ᵇ ℝ), Integrable (fun x ↦ (φ x) • ((K : Set E).indicator f x)) μ :=
+                by
                 intro φ
                 have : support (fun x ↦ (φ x) • ((K : Set E).indicator f x)) ⊆ K := by
                   aesop
@@ -673,8 +677,9 @@ open TestFunction
 
 variable [RCLike 𝕜] [Module ℝ F]
 
-def HasOrder (T : 𝓓^{n}(E, 𝕜) →L[ℝ] F) (m : ℕ) : Prop := sorry
+-- def HasOrder (T : 𝓓^{n}(E, 𝕜) →L[ℝ] F) (m : ℕ) : Prop := sorry
 
 end Distribution
 
+#print axioms TestFunction.ofLocallyIntegrableL
 #min_imports
