@@ -1,18 +1,13 @@
 /-
 Copyright (c) 2023 Anatole Dedecker. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Anatole Dedecker
+Authors: Anatole Dedecker, Luigi Massacci
 -/
 
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Topology.ContinuousMap.Bounded.Normed
-import Mathlib.Analysis.Seminorm
-import Mathlib.Topology.Sets.Compacts
-
---for testing
-import Mathlib.Analysis.CStarAlgebra.Classes
 import Mathlib.Analysis.InnerProductSpace.Basic
-
+import Mathlib.Topology.ContinuousMap.Bounded.Normed
+import Mathlib.Topology.Sets.Compacts
 /-!
 
 BLAH FOR LINTER
@@ -275,7 +270,7 @@ lemma iteratedFDeriv'_apply (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) (x : E) :
   rw [ContDiffMapSupportedIn.iteratedFDeriv']
   split_ifs <;> rfl
 
-@[simp low-1]
+@[simp]
 lemma coe_iteratedFDeriv'_of_le {i : ℕ} (hin : i ≤ n) (f : 𝓓^{n}_{K}(E, F)) :
     f.iteratedFDeriv' i = iteratedFDeriv ℝ i f := by
   ext : 1
@@ -309,7 +304,7 @@ lemma iteratedFDeriv'_add (i : ℕ) {f g : 𝓓^{n}_{K}(E, F)} :
 lemma iteratedFDeriv'_smul (i : ℕ) {c : 𝕜} {f : 𝓓^{n}_{K}(E, F)} :
     (c • f).iteratedFDeriv' i = c • f.iteratedFDeriv' i := by
   ext : 1
-  simp only [iteratedFDeriv'_apply, RingHom.id_apply, smul_apply]
+  simp only [iteratedFDeriv'_apply, smul_apply]
   split_ifs with hin
   · apply iteratedFDeriv_const_smul_apply
     refine ContDiff.contDiffAt <| f.contDiff.of_le (by exact_mod_cast hin)
@@ -326,7 +321,7 @@ lemma iteratedFDerivₗ'_eq_iteratedFDeriv' (i : ℕ) :
   (iteratedFDerivₗ' 𝕜 i : 𝓓^{n}_{K}(E, F) → _) = (iteratedFDeriv' i : _) := by
   congr
 
-lemma iteratedFDeriv'_zero (i : ℕ)  :
+lemma iteratedFDeriv'_zero (i : ℕ) :
     (0 : 𝓓^{n}_{K}(E, F)).iteratedFDeriv' i = 0 :=
   map_zero (iteratedFDerivₗ' ℝ i)
 
@@ -400,7 +395,7 @@ protected theorem seminorm_apply (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
   rfl
 
 @[simp]
-lemma iteratedFDeriv'_tobcf_apply (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) (x : E):
+lemma iteratedFDeriv'_tobcf_apply (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) (x : E) :
   (f.iteratedFDeriv' i : E →ᵇ (E [×i]→L[ℝ] F)) x = f.iteratedFDeriv' i x := by
     rfl
 
@@ -414,7 +409,7 @@ protected theorem seminorm_eq_bot {i : ℕ} (hin : n < i) :
 theorem norm_to_bcfₗ (f : 𝓓^{n}_{K}(E, F)) :
     ‖to_bcfₗ 𝕜 f‖ = ContDiffMapSupportedIn.seminorm 𝕜 E F n K 0 f := by
   simp only [BoundedContinuousFunction.norm_eq_iSup_norm, to_bcfₗ_apply_apply,
-    ContDiffMapSupportedIn.seminorm_apply, CharP.cast_eq_zero, zero_le]
+    ContDiffMapSupportedIn.seminorm_apply]
   simp only [iteratedFDeriv'_tobcf_apply]
   conv =>
     enter [-1, 1, x, 1]
