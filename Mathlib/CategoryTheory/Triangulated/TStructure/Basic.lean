@@ -83,7 +83,7 @@ lemma exists_triangle (A : C) (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) :
   have hT' : Triangle.mk (T.mor₁ ≫ e.hom) (e.inv ≫ T.mor₂) T.mor₃ ∈ distTriang C := by
     refine isomorphic_distinguished _ (Triangle.shift_distinguished _ mem (-n₀)) _ ?_
     refine Triangle.isoMk _ _ (Iso.refl _) e.symm (Iso.refl _) ?_ ?_ ?_
-    all_goals dsimp; simp [T]
+    all_goals simp [T]
   exact ⟨_, _, t.le_shift _ _ _ (neg_add_cancel n₀) _ hX,
     t.ge_shift _ _ _ (by omega) _ hY, _, _, _, hT'⟩
 
@@ -166,6 +166,12 @@ class IsGE (X : C) (n : ℤ) : Prop where
 lemma le_of_isLE (X : C) (n : ℤ) [t.IsLE X n] : t.le n X := IsLE.le
 
 lemma ge_of_isGE (X : C) (n : ℤ) [t.IsGE X n] : t.ge n X := IsGE.ge
+
+lemma isLE_of_iso {X Y : C} (e : X ≅ Y) (n : ℤ) [t.IsLE X n] : t.IsLE Y n where
+  le := (t.le n).prop_of_iso e (t.le_of_isLE X n)
+
+lemma isGE_of_iso {X Y : C} (e : X ≅ Y) (n : ℤ) [t.IsGE X n] : t.IsGE Y n where
+  ge := (t.ge n).prop_of_iso e (t.ge_of_isGE X n)
 
 @[deprecated (since := "2025-02-25")] alias LE := le
 @[deprecated (since := "2025-02-25")] alias GE := ge

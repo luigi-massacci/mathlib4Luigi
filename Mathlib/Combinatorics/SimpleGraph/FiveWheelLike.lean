@@ -21,7 +21,7 @@ If `¬ G.IsCompleteMultipartite` then it contains a `G.IsPathGraph3Compl v w₁ 
 an edge `w₁w₂` and a vertex `v` such that `vw₁` and `vw₂` are non-edges.
 
 Hence any maximally `Kᵣ₊₂`-free graph that is not complete-multipartite must contain distinct
-vertices `v, w₁, w₂`, together with `r`-sets `s` and `t`, such that `{v , w₁, w₂}` induces the
+vertices `v, w₁, w₂`, together with `r`-sets `s` and `t`, such that `{v, w₁, w₂}` induces the
 single edge `w₁w₂`, `s ∪ t` is disjoint from `{v, w₁, w₂}`, and `s ∪ {v}`, `t ∪ {v}`, `s ∪ {w₁}` and
  `t ∪ {w₂}` are all `r + 1`-cliques.
 
@@ -63,12 +63,12 @@ statements of results and match our definition of `IsFiveWheelLikeFree`.
 
 ## References
 
-* B. Andrasfái, P Erdős, V. T. Sós
+* [B. Andrasfái, P Erdős, V. T. Sós
   **On the connection between chromatic number, maximal clique, and minimal degree of a graph**
-  https://doi.org/10.1016/0012-365X(74)90133-2
+  https://doi.org/10.1016/0012-365X(74)90133-2][andrasfaiErdosSos1974]
 
-* S. Brandt **On the structure of graphs with bounded clique number**
-  https://doi.org/10.1007/s00493-003-0042-z
+* [S. Brandt **On the structure of graphs with bounded clique number**
+  https://doi.org/10.1007/s00493-003-0042-z][brandt2003]
 -/
 open Finset SimpleGraph
 
@@ -98,17 +98,17 @@ An `IsFiveWheelLike r k v w₁ w₂ s t` structure in `G` consists of vertices `
 `s` and `t` such that `{v, w₁, w₂}` induces the single edge `w₁w₂` (i.e. they form an
 `IsPathGraph3Compl`), `v, w₁, w₂ ∉ s ∪ t`, `s ∪ {v}, t ∪ {v}, s ∪ {w₁}, t ∪ {w₂}` are all
 `(r + 1)`- cliques and `#(s ∩ t) = k`. (If `G` is maximally `(r + 2)`-cliquefree and not complete
- multipartite then `G` will contain such a structure : see
+multipartite then `G` will contain such a structure : see
 `exists_isFiveWheelLike_of_maximal_cliqueFree_not_isCompleteMultipartite`.)
 -/
 structure IsFiveWheelLike (G : SimpleGraph α) (r k : ℕ) (v w₁ w₂ : α) (s t : Finset α) :
     Prop where
   /-- `{v, w₁, w₂}` induces the single edge `w₁w₂` -/
   isPathGraph3Compl : G.IsPathGraph3Compl v w₁ w₂
-  not_mem_left : v ∉ s
-  not_mem_right : v ∉ t
-  fst_not_mem : w₁ ∉ s
-  snd_not_mem : w₂ ∉ t
+  notMem_left : v ∉ s
+  notMem_right : v ∉ t
+  fst_notMem : w₁ ∉ s
+  snd_notMem : w₂ ∉ t
   isNClique_left : G.IsNClique (r + 1) (insert v s)
   isNClique_fst_left : G.IsNClique (r + 1) (insert w₁ s)
   isNClique_right : G.IsNClique (r + 1) (insert v t)
@@ -125,7 +125,7 @@ lemma exists_isFiveWheelLike_of_maximal_cliqueFree_not_isCompleteMultipartite
 
 /-- `G.FiveWheelLikeFree r k` means there is no `IsFiveWheelLike r k` structure in `G`. -/
 def FiveWheelLikeFree (G : SimpleGraph α) (r k : ℕ) : Prop :=
-    ∀ {v w₁ w₂ s t}, ¬ G.IsFiveWheelLike r k v w₁ w₂ s t
+  ∀ {v w₁ w₂ s t}, ¬ G.IsFiveWheelLike r k v w₁ w₂ s t
 
 namespace IsFiveWheelLike
 
@@ -134,14 +134,14 @@ variable {v w₁ w₂ : α} {t : Finset α} (hw : G.IsFiveWheelLike r k v w₁ w
 include hw
 
 @[symm] lemma symm : G.IsFiveWheelLike r k v w₂ w₁ t s :=
-  let ⟨p2, d1, d2, d3, d4, c1, c2, c3, c4 , hk⟩ := hw
+  let ⟨p2, d1, d2, d3, d4, c1, c2, c3, c4, hk⟩ := hw
   ⟨p2.symm, d2, d1, d4, d3, c3, c4, c1, c2, by rwa [inter_comm]⟩
 
-lemma fst_not_mem_right : w₁ ∉ t :=
+lemma fst_notMem_right : w₁ ∉ t :=
   fun h ↦ hw.isPathGraph3Compl.not_adj_fst <| hw.isNClique_right.1 (mem_insert_self ..)
     (mem_insert_of_mem h) hw.isPathGraph3Compl.ne_fst
 
-lemma snd_not_mem_left : w₂ ∉ s := hw.symm.fst_not_mem_right
+lemma snd_notMem_left : w₂ ∉ s := hw.symm.fst_notMem_right
 
 /--
 Any graph containing an `IsFiveWheelLike r k` structure is not `(r + 1)`-colorable.
@@ -165,13 +165,13 @@ lemma not_colorable_succ : ¬ G.Colorable (r + 1) := by
       subst_vars; exact C.valid hw.isPathGraph3Compl.adj (hcy ▸ hcx)
     | inr hy =>
       apply (C.valid _ hcy.symm).elim
-      exact hw.isNClique_right.1 (by simp) (by simp [hy]) fun h ↦ hw.not_mem_right (h ▸ hy)
+      exact hw.isNClique_right.1 (by simp) (by simp [hy]) fun h ↦ hw.notMem_right (h ▸ hy)
   | inr hx =>
     apply (C.valid _ hcx.symm).elim
-    exact hw.isNClique_left.1 (by simp) (by simp [hx]) fun h ↦ hw.not_mem_left (h ▸ hx)
+    exact hw.isNClique_left.1 (by simp) (by simp [hx]) fun h ↦ hw.notMem_left (h ▸ hx)
 
 lemma card_left : s.card = r := by
-  simp [← Nat.succ_inj, ← hw.isNClique_left.2, hw.not_mem_left]
+  simp [← Nat.succ_inj, ← hw.isNClique_left.2, hw.notMem_left]
 
 lemma card_right : t.card = r := hw.symm.card_left
 
@@ -181,7 +181,7 @@ lemma card_inter_lt_of_cliqueFree (h : G.CliqueFree (r + 2)) : k < r := by
   have hs := eq_of_subset_of_card_le inter_subset_left (hw.card_inter ▸ hw.card_left ▸ h)
   have := eq_of_subset_of_card_le inter_subset_right (hw.card_inter ▸ hw.card_right ▸ h)
   exact (hw.isNClique_fst_left.insert_insert (hs ▸ this.symm ▸ hw.isNClique_snd_right)
-    hw.snd_not_mem_left hw.isPathGraph3Compl.adj).not_cliqueFree
+    hw.snd_notMem_left hw.isPathGraph3Compl.adj).not_cliqueFree
 
 end IsFiveWheelLike
 
@@ -200,11 +200,11 @@ lemma exists_max_isFiveWheelLike_of_maximal_cliqueFree_not_isCompleteMultipartit
   classical
   obtain ⟨_, _, _, _, _, hw⟩ := Nat.findGreatest_spec (hw.card_inter_lt_of_cliqueFree h.1).le hk
   exact ⟨_, _, _, _, _, _, hw, hw.card_inter_lt_of_cliqueFree h.1,
-         fun _ hj _ _ _ _ _ hv ↦ hj.not_le <| Nat.le_findGreatest
+         fun _ hj _ _ _ _ _ hv ↦ hj.not_ge <| Nat.le_findGreatest
            (hv.card_inter_lt_of_cliqueFree h.1).le ⟨_, _, _, _, _, hv⟩⟩
 
 lemma CliqueFree.fiveWheelLikeFree_of_le (h : G.CliqueFree (r + 2)) (hk : r ≤ k) :
-    G.FiveWheelLikeFree r k := fun hw ↦ (hw.card_inter_lt_of_cliqueFree h).not_le hk
+    G.FiveWheelLikeFree r k := fun hw ↦ (hw.card_inter_lt_of_cliqueFree h).not_ge hk
 
 /-- A maximally `Kᵣ₊₁`-free graph is `r`-colorable iff it is complete-multipartite. -/
 theorem colorable_iff_isCompleteMultipartite_of_maximal_cliqueFree
