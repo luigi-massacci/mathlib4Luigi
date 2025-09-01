@@ -601,13 +601,3 @@ protected theorem withSeminorms_of_finite : WithSeminorms
 end finite
 
 end ContDiffMapSupportedIn
-
-
-variable (S : Compacts (Fin 3 → ℝ))
--- This shoudl fail: #synth Module ℂ 𝓓^{5}_{S}(Fin 3 → ℝ, Fin 3 → ℝ)
-#synth Module ℝ 𝓓^{5}_{S}(Fin 3 → ℝ, Fin 3 → ℂ)
-
-#synth Module ℂ 𝓓^{⊤}_{S}(Fin 3 → ℝ, Fin 3 → ℂ)
-
-variable (S': Compacts (Fin 3 → ℂ))
-#synth Module ℂ 𝓓^{⊤}_{S'}(Fin 3 → ℂ, Fin 3 → ℂ)

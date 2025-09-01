@@ -316,7 +316,7 @@ noncomputable def to_bcfₗ : 𝓓^{n}(E, F) →ₗ[𝕜] E →ᵇ F  where
 lemma to_bcf_comp_eq (K : Compacts E) :
   (to_bcfₗ 𝕜 E F n) ∘ (ContDiffMapSupportedIn.toTestFunction 𝕜 F n K)  =
     ContDiffMapSupportedIn.to_bcfₗ 𝕜 := by
-    congr
+    congr 0
 
 @[simps!]
 noncomputable def to_bcfL : 𝓓^{n}(E, F) →L[𝕜] E →ᵇ F  :=
