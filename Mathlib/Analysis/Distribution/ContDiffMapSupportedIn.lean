@@ -10,8 +10,9 @@ import Mathlib.Topology.ContinuousMap.Bounded.Normed
 import Mathlib.Topology.Sets.Compacts
 
 /-!
+# Continuously differentiable functions with compact support
 
-BLAH FOR LINTER
+This file defines the type of continuously differentiable functions with support in a given compact.
 
 -/
 
