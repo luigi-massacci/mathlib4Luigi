@@ -8,6 +8,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.Topology.ContinuousMap.Bounded.Normed
 import Mathlib.Topology.Sets.Compacts
+
 /-!
 
 BLAH FOR LINTER

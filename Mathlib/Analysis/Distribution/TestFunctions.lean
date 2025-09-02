@@ -1,9 +1,21 @@
+/-
+Copyright (c) 2025 Luigi Massacci. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Luigi Massacci
+-/
+
 import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.BoundedContinuousFunction
 import Mathlib.Order.CompletePartialOrder
 import Mathlib.Topology.EMetricSpace.Paracompact
 import Mathlib.Topology.Separation.CompletelyRegular
+
+/-!
+
+BLAH FOR LINTER
+
+-/
 
 open TopologicalSpace SeminormFamily Set Function Seminorm UniformSpace
 open scoped BoundedContinuousFunction Topology NNReal
@@ -556,7 +568,7 @@ noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f �
               rw [integral_const_mul_of_integrable]
               · rw [mul_comm]
                 gcongr
-                simp only [le_add_iff_nonneg_right, zero_le_one, M, g, int']
+                simp only [le_add_iff_nonneg_right, zero_le_one, M]
               · apply Integrable.norm ?_
                 refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
                 refine integrableOn_isCompact (hf.locallyIntegrableOn K) K.isCompact
@@ -613,6 +625,3 @@ open TestFunction
 variable [RCLike 𝕜] [Module ℝ F]
 
 end Distribution
-
-
-#min_imports
