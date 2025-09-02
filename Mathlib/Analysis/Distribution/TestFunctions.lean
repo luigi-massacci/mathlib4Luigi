@@ -282,7 +282,7 @@ noncomputable def to_bcfₗ : 𝓓^{n}(E, F) →ₗ[𝕜] E →ᵇ F  where
 
 lemma to_bcf_comp_eq (K : Compacts E) :
   (to_bcfₗ 𝕜 E F n) ∘ (ContDiffMapSupportedIn.toTestFunction 𝕜 F n K)  =
-    ContDiffMapSupportedIn.to_bcfₗ 𝕜 := by
+    ContDiffMapSupportedIn.toBoundedContinuousFunctionₗ 𝕜 := by
     congr 0
 
 @[simps!]
@@ -294,7 +294,7 @@ noncomputable def to_bcfL : 𝓓^{n}(E, F) →L[𝕜] E →ᵇ F  :=
           rw [TestFunction.continuous_iff ℝ ℝ (to_bcfₗ ℝ E F n)]
           intro K
           rw [to_bcf_comp_eq _ _]
-          exact (ContDiffMapSupportedIn.to_bcfL 𝕜).continuous
+          exact (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM 𝕜).continuous
         )
   }
 
@@ -435,7 +435,7 @@ noncomputable def ofMeasureL : 𝓓^{n}(E, F) →L[𝕜] F where
           cont := by
             apply IsBoundedLinearMap.continuous this  }
       have : ofMeasureₗ ℝ n μ ∘ (toTestFunction ℝ F n K)
-          = int ∘ (ContDiffMapSupportedIn.to_bcfL 𝕜) := by
+          = int ∘ (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM 𝕜) := by
         ext f
         simp [ofMeasureₗ, int, int']
         have hK : MeasurableSet (K : Set E) := by
@@ -447,7 +447,7 @@ noncomputable def ofMeasureL : 𝓓^{n}(E, F) →L[𝕜] F where
           MeasureTheory.integral_add_compl hK (map_integrable' n μ f)]
         congr
       rw [this]
-      exact int.continuous.comp (ContDiffMapSupportedIn.to_bcfL 𝕜).continuous
+      exact int.continuous.comp (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM 𝕜).continuous
     )
 
 
@@ -577,7 +577,7 @@ noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f �
             cont := by
               apply IsBoundedLinearMap.continuous this  }
         have : ofLocallyIntegrableₗ n μ hf ∘ (toTestFunction ℝ ℝ n K)
-          = int ∘ ((ContDiffMapSupportedIn.to_bcfL ℝ)):= by
+          = int ∘ ((ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ)):= by
             ext φ
             simp [ofLocallyIntegrableₗ, int, int']
             congr
@@ -587,7 +587,8 @@ noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f �
             · simp [h]
             · simp [h, φ.zero_on_compl h]
         rw [this]
-        exact int.continuous.comp ((ContDiffMapSupportedIn.to_bcfL ℝ)).continuous
+        exact int.continuous.comp
+          ((ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ)).continuous
     )
 
 end LocallyIntegrable
