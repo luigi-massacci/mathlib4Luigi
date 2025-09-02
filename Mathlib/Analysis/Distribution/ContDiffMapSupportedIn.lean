@@ -19,7 +19,6 @@ This file defines the type of continuously differentiable functions with support
 open TopologicalSpace SeminormFamily Set Function Seminorm UniformSpace
 open scoped BoundedContinuousFunction Topology NNReal
 
--- Think `𝕜 = ℝ` or `𝕜 = ℂ`
 variable (𝕜 E F : Type*) [NontriviallyNormedField 𝕜]
 variable [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
@@ -152,7 +151,7 @@ instance : Neg 𝓓^{n}_{K}(E, F) where
 
 instance instSub : Sub 𝓓^{n}_{K}(E, F) :=
   ⟨fun f g =>
-    ⟨f - g, (f.contDiff').sub (g.contDiff'), by
+    ⟨f - g, (f.contDiff).sub (g.contDiff), by
       intro x hx
       simp [f.zero_on_compl hx, g.zero_on_compl hx]
     ⟩
@@ -180,7 +179,7 @@ instance instNSMul : SMul ℕ 𝓓^{n}_{K}(E, F) :=
  ⟨fun c f ↦
     {
       toFun := c • f
-      contDiff' := (f.contDiff').const_smul c
+      contDiff' := (f.contDiff).const_smul c
       zero_on_compl' := by
         rw [← smul_zero c]
         exact f.zero_on_compl.comp_left
@@ -191,7 +190,7 @@ instance instZSMul : SMul ℤ 𝓓^{n}_{K}(E, F) :=
  ⟨fun c f ↦
     {
       toFun := c • f
-      contDiff' := (f.contDiff').const_smul c
+      contDiff' := (f.contDiff).const_smul c
       zero_on_compl' := by
         rw [← smul_zero c]
         exact f.zero_on_compl.comp_left
@@ -341,7 +340,6 @@ section Topology
 noncomputable instance topologicalSpace : TopologicalSpace 𝓓^{n}_{K}(E, F) :=
   ⨅ (i : ℕ), induced (iteratedFDeriv_to_bcfₗ ℝ i) inferInstance
 
--- The following two lemmas bear some thinking
 noncomputable instance uniformSpace : UniformSpace 𝓓^{n}_{K}(E, F) := .replaceTopology
   (⨅ (i : ℕ), UniformSpace.comap (iteratedFDeriv_to_bcfₗ ℝ i) inferInstance)
   toTopologicalSpace_iInf.symm
