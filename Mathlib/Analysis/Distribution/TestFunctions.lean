@@ -346,7 +346,6 @@ lemma map_integrable (f : 𝓓^{n}(E, F)) : Integrable f μ  := by
 variable {K : Compacts E}
 
 
--- TODO: move to ContDiffMapSupportedIn
 lemma map_integrable' (f : 𝓓^{n}_{K}(E, F)) : Integrable f μ  := by
   apply Continuous.integrable_of_hasCompactSupport (map_continuous f) (f.hasCompactSupport)
 
@@ -430,7 +429,8 @@ open MeasureTheory Module
 variable [MeasurableSpace E]
 variable (μ : Measure E)
 
-variable [NormedSpace ℝ 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] [ContinuousConstSMul 𝕜 F]
+variable [NormedSpace ℝ 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+  [ContinuousConstSMul 𝕜 F]
 
 
 variable [Module 𝕜 F] [SMulCommClass ℝ 𝕜 F] [ContinuousConstSMul 𝕜 F] [IsScalarTower ℝ 𝕜 F]
@@ -443,11 +443,10 @@ lemma ofLocallyIntegrable_apply (f : E → F) (φ : 𝓓^{n}(E, 𝕜)) :
     ofLocallyIntegrable 𝕜 n μ f φ = (∫ x, (φ x) • (f x) ∂μ) := by
   rfl
 
-variable [OpensMeasurableSpace E]
+variable [OpensMeasurableSpace E] [IsBoundedSMul 𝕜 F]
+variable {𝕜}
 
--- TODO: Generalize lemma to 𝕜
--- Note: restricting to ℝ to use the lemma.
-lemma ofLocallyIntegrable_integrable {f : E → F} (hf : LocallyIntegrable f μ) (φ : 𝓓^{n}(E, ℝ)) :
+lemma ofLocallyIntegrable_integrable {f : E → F} (hf : LocallyIntegrable f μ) (φ : 𝓓^{n}(E, 𝕜)) :
     Integrable (fun x ↦ (φ x) • (f x)) μ := by
   apply MeasureTheory.LocallyIntegrable.integrable_smul_left_of_hasCompactSupport hf
           (map_continuous φ) (compact_supp φ)
