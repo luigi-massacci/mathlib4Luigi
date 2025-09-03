@@ -13,20 +13,21 @@ import Mathlib.Topology.Separation.CompletelyRegular
 
 /-!
 
-BLAH FOR LINTER
+# Space of Test Functions
+
+We define the space of test functions `𝓓^{n}(E, F)` as the space of `n`-times continuously
+differentiable with compact support.
 
 -/
 
 open TopologicalSpace SeminormFamily Set Function Seminorm UniformSpace
 open scoped BoundedContinuousFunction Topology NNReal
 
--- Think `𝕜 = ℝ` or `𝕜 = ℂ`
 variable (𝕜 E F : Type*) [NontriviallyNormedField 𝕜]
 variable [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
 variable {n : ℕ∞}
 
--- Q: parametrize by some Ω : Opens E?
 structure TestFunction (n : ℕ∞) : Type _ where
   protected toFun : E → F
   protected contDiff' : ContDiff ℝ n toFun
@@ -135,12 +136,6 @@ lemma add_apply (f g : 𝓓^{n}(E, F)) (x : E) : (f + g) x = f x + g x :=
 instance : Neg 𝓓^{n}(E, F) where
   neg f := TestFunction.mk (-f) (f.contDiff.neg) (f.compact_supp.neg)
 
-theorem HasCompactSupport.sub {α β : Type*} [TopologicalSpace α] [SubtractionMonoid β]
-  {f f' : α → β} (hf : HasCompactSupport f) (hf' : HasCompactSupport f') :
-    HasCompactSupport (f - f') :=
-  sub_eq_add_neg f f' ▸ hf.add hf'.neg
-
--- TOOD: add HasCompactSupport.sub in general
 instance instSub : Sub 𝓓^{n}(E, F) :=
   ⟨fun f g =>
     ⟨f - g, (f.contDiff').sub (g.contDiff'),
@@ -148,7 +143,6 @@ instance instSub : Sub 𝓓^{n}(E, F) :=
     ⟩
   ⟩
 
--- TOOD: add HasCompactSupport.const_smul_left in general
 instance instSMul {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F] :
    SMul R 𝓓^{n}(E, F) :=
   ⟨fun c f ↦
@@ -164,7 +158,6 @@ lemma coe_smul {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [Continuous
 lemma smul_apply {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F]
     (c : R) (f : 𝓓^{n}(E, F)) (x : E) : (c • f) x = c • (f x) :=
   rfl
-
 
 instance instNSMul : SMul ℕ 𝓓^{n}(E, F) :=
  ⟨fun c f ↦
@@ -275,35 +268,38 @@ protected theorem continuous_iff {V : Type*} [AddCommMonoid V] [Module ℝ V] [M
 variable (E F n)
 
 @[simps]
-noncomputable def to_bcfₗ : 𝓓^{n}(E, F) →ₗ[𝕜] E →ᵇ F  where
+noncomputable def toBoundedContinuousFunctionₗ : 𝓓^{n}(E, F) →ₗ[𝕜] E →ᵇ F  where
   toFun f := f
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
 lemma to_bcf_comp_eq (K : Compacts E) :
-  (to_bcfₗ 𝕜 E F n) ∘ (ContDiffMapSupportedIn.toTestFunction 𝕜 F n K)  =
+  (toBoundedContinuousFunctionₗ 𝕜 E F n) ∘ (ContDiffMapSupportedIn.toTestFunction 𝕜 F n K)  =
     ContDiffMapSupportedIn.toBoundedContinuousFunctionₗ 𝕜 := by
     congr 0
 
 @[simps!]
-noncomputable def to_bcfL : 𝓓^{n}(E, F) →L[𝕜] E →ᵇ F  :=
-  { toLinearMap := to_bcfₗ 𝕜 E F n
-    cont := show Continuous (to_bcfₗ ℝ E F n)
+noncomputable def toBoundedContinuousFunctionCLM : 𝓓^{n}(E, F) →L[𝕜] E →ᵇ F  :=
+  { toLinearMap := toBoundedContinuousFunctionₗ 𝕜 E F n
+    cont := show Continuous (toBoundedContinuousFunctionₗ ℝ E F n)
       by
         (
-          rw [TestFunction.continuous_iff ℝ ℝ (to_bcfₗ ℝ E F n)]
+          rw [TestFunction.continuous_iff ℝ ℝ (toBoundedContinuousFunctionₗ ℝ E F n)]
           intro K
           rw [to_bcf_comp_eq _ _]
           exact (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM 𝕜).continuous
         )
   }
 
-theorem injective_to_bcfL : Function.Injective (to_bcfL 𝕜 E F n) := by
+theorem injective_toBoundedContinuousFunctionCLM :
+    Function.Injective (toBoundedContinuousFunctionCLM 𝕜 E F n) := by
   intro f g
-  simp [to_bcfL, to_bcfₗ]
+  simp [toBoundedContinuousFunctionCLM, toBoundedContinuousFunctionₗ]
 
 theorem T25Space_TestFunction : T25Space 𝓓^{n}(E, F) :=
-  T25Space.of_injective_continuous (injective_to_bcfL ℝ E F n) (to_bcfL ℝ E F n).continuous
+  T25Space.of_injective_continuous
+    (injective_toBoundedContinuousFunctionCLM ℝ E F n)
+    (toBoundedContinuousFunctionCLM ℝ E F n).continuous
 
 variable {G 𝕜' : Type*} [NontriviallyNormedField 𝕜']
 variable {σ : 𝕜 →+* 𝕜'}
@@ -326,35 +322,7 @@ theorem continuous_of_commute_toTestFunction
   obtain ⟨g, hg, hfg⟩ := hc K
   exact hfg ▸ (continuous_toTestFunction ℝ E G n K).comp hg
 
-variable {𝕜 𝕜'}
-def mkLM (A : (E → F) → (E → G))
-    (hadd : ∀ (f g : 𝓓^{n}(E, F)) (x), A (f + g) x = A f x + A g x)
-    (hsmul : ∀ (a : 𝕜) (f : 𝓓^{n}(E, F)) (x), A (a • f) x = σ a • A f x)
-    (hsmooth : ∀ f : 𝓓^{n}(E, F), ContDiff ℝ n (A f))
-    (hsupp : ∀ f : 𝓓^{n}(E, F), HasCompactSupport (A f)) :
-    𝓓^{n}(E, F) →ₛₗ[σ] 𝓓^{n}(E, G) where
-  toFun f :=
-    { toFun := A f
-      contDiff' := hsmooth f
-      compact_supp' := hsupp f }
-  map_add' f g := ext (hadd f g)
-  map_smul' a f := ext (hsmul a f)
-
-
--- TODO: think about hsmul / hsmul'
-noncomputable def mkCLM [RingHomIsometric σ] (A : (E → F) → (E → G))
-    (hadd : ∀ (f g : 𝓓^{n}(E, F)) (x : E), A (f + g) x = A f x + A g x)
-    (hsmul : ∀ (a : 𝕜) (f : 𝓓^{n}(E, F)) (x : E), A (a • f) x = σ a • A f x)
-    (hsmul' : ∀ (a : ℝ) (f : 𝓓^{n}(E, F)) (x : E), A (a • f) x = a • A f x)
-    (hsmooth : ∀ f : 𝓓^{n}(E, F), ContDiff ℝ n (A f))
-    (hsupp : ∀ f : 𝓓^{n}(E, F), HasCompactSupport (A f))
-    (hcomp : toTestFunction_comp 𝕜 𝕜' (mkLM A hadd hsmul hsmooth hsupp)) :
-    𝓓^{n}(E, F) →SL[σ] 𝓓^{n}(E, G) where
-  cont := continuous_of_commute_toTestFunction 𝕜 𝕜' (mkLM A hadd hsmul' hsmooth hsupp) hcomp
-  toLinearMap := mkLM A hadd hsmul hsmooth hsupp
-
-
-variable (𝕜 n)
+variable (n)
 
 section Integration
 
@@ -464,9 +432,9 @@ variable (μ : Measure E)
 
 variable [NormedSpace ℝ 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] [ContinuousConstSMul 𝕜 F]
 
--- At this stage, probably easier to assume RCLike 𝕜 everywhere
+
 variable [Module 𝕜 F] [SMulCommClass ℝ 𝕜 F] [ContinuousConstSMul 𝕜 F] [IsScalarTower ℝ 𝕜 F]
--- Q: Remove hf at this stage?
+
 noncomputable def ofLocallyIntegrable (f : E → F) :
     𝓓^{n}(E, 𝕜) → F := fun φ : 𝓓^{n}(E, 𝕜) ↦ (∫ x, (φ x) • (f x) ∂μ)
 
@@ -485,8 +453,6 @@ lemma ofLocallyIntegrable_integrable {f : E → F} (hf : LocallyIntegrable f μ)
           (map_continuous φ) (compact_supp φ)
 
 -- TODO: This fails to synthetize Module 𝕜 𝓓^{n}(E, 𝕜), so fixing map to be ℝ-linear.
--- (Having 𝓓^{n}(E, 𝕜) otherwise works, see note on ofLocallyIntegrable_integrable for why it is
--- fixed to ℝ.)
 noncomputable def ofLocallyIntegrableₗ {f : E → F} (hf : LocallyIntegrable f μ) :
     𝓓^{n}(E, ℝ) →ₗ[ℝ] F :=
   { toFun := ofLocallyIntegrable ℝ n μ f
@@ -599,7 +565,7 @@ section DiracDelta
 variable (F)
 
 noncomputable def delta (x : E) : 𝓓^{n}(E, F) →L[𝕜] F :=
-  (BoundedContinuousFunction.evalCLM 𝕜 x).comp (to_bcfL 𝕜 E F n)
+  (BoundedContinuousFunction.evalCLM 𝕜 x).comp (toBoundedContinuousFunctionCLM 𝕜 E F n)
 
 @[simp]
 theorem delta_apply (x₀ : E) (f : 𝓓^{n}(E, F)) : delta 𝕜 F n x₀ f = f x₀ :=
@@ -610,6 +576,7 @@ open MeasureTheory Measure
 variable [MeasurableSpace E] [BorelSpace E]
 variable [SecondCountableTopology F] [MeasurableSpace F] [BorelSpace F]
 variable [CompleteSpace F]
+
 /-- Integrating against the Dirac measure is equal to the delta distribution. -/
 @[simp]
 theorem integralCLM_dirac_eq_delta (x : E) : ofMeasureL 𝕜 n (dirac x) = delta 𝕜 F n x := by
