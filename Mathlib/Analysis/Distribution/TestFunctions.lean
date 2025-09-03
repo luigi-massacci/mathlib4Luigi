@@ -453,8 +453,8 @@ lemma ofLocallyIntegrable_integrable {f : E → F} (hf : LocallyIntegrable f μ)
 
 -- TODO: This fails to synthetize Module 𝕜 𝓓^{n}(E, 𝕜), so fixing map to be ℝ-linear.
 noncomputable def ofLocallyIntegrableₗ {f : E → F} (hf : LocallyIntegrable f μ) :
-    𝓓^{n}(E, ℝ) →ₗ[ℝ] F :=
-  { toFun := ofLocallyIntegrable ℝ n μ f
+    𝓓^{n}(E, 𝕜) →ₗ[ℝ] F :=
+  { toFun := ofLocallyIntegrable 𝕜 n μ f
     map_add' := fun φ Φ  ↦ by
       simp only [ofLocallyIntegrable_apply, add_apply]
       simp_rw [add_smul]
@@ -465,22 +465,22 @@ noncomputable def ofLocallyIntegrableₗ {f : E → F} (hf : LocallyIntegrable f
       simp_rw [smul_assoc, integral_smul c (fun x ↦  φ x • f x)]
   }
 
-variable [IsFiniteMeasureOnCompacts μ] [SecondCountableTopology E]
+variable [IsFiniteMeasureOnCompacts μ] [SecondCountableTopology E] [NormSMulClass 𝕜 F]
 
 open LocallyIntegrableOn Integrable MeasureTheory
 @[simps! apply]
 noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f μ) :
-    𝓓^{n}(E, ℝ) →L[ℝ] F where
-  toLinearMap := (ofLocallyIntegrableₗ n μ hf : 𝓓^{n}(E, ℝ) →ₗ[ℝ] F)
+    𝓓^{n}(E, 𝕜) →L[ℝ] F where
+  toLinearMap := (ofLocallyIntegrableₗ n μ hf : 𝓓^{n}(E, 𝕜) →ₗ[ℝ] F)
   cont := show Continuous (ofLocallyIntegrableₗ n μ hf) by
     (
         rw [TestFunction.continuous_iff ℝ ℝ (ofLocallyIntegrableₗ n μ hf)]
         intro K
-        set int' : (E →ᵇ ℝ) →ₗ[ℝ] F := {
+        set int' : (E →ᵇ 𝕜) →ₗ[ℝ] F := {
             toFun := fun φ ↦ ∫ x, (φ x) • ((K : Set E).indicator f x) ∂μ
             map_add' := by
               intro φ Φ
-              have h: ∀ φ : (E →ᵇ ℝ), Integrable (fun x ↦ (φ x) • ((K : Set E).indicator f x)) μ :=
+              have h: ∀ φ : (E →ᵇ 𝕜), Integrable (fun x ↦ (φ x) • ((K : Set E).indicator f x)) μ :=
                 by
                 intro φ
                 have : support (fun x ↦ (φ x) • ((K : Set E).indicator f x)) ⊆ K := by
@@ -537,11 +537,11 @@ noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f �
               · apply Integrable.norm ?_
                 refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
                 refine integrableOn_isCompact (hf.locallyIntegrableOn K) K.isCompact
-        set int : (E →ᵇ ℝ) →L[ℝ] F :=
+        set int : (E →ᵇ 𝕜) →L[ℝ] F :=
           { toLinearMap := int'
             cont := by
               apply IsBoundedLinearMap.continuous this  }
-        have : ofLocallyIntegrableₗ n μ hf ∘ (toTestFunction ℝ ℝ n K)
+        have : ofLocallyIntegrableₗ n μ hf ∘ (toTestFunction ℝ 𝕜 n K)
           = int ∘ ((ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ)):= by
             ext φ
             simp [ofLocallyIntegrableₗ, int, int']
