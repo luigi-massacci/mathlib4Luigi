@@ -324,6 +324,7 @@ theorem continuous_of_commute_toTestFunction
 
 variable (n)
 
+
 section Integration
 
 open MeasureTheory Module
@@ -359,8 +360,27 @@ noncomputable def ofMeasureₗ : 𝓓^{n}(E, F) →ₗ[𝕜] F :=
 
 variable [CompleteSpace F]
 
+theorem isBDL_integral_of_finite [IsFiniteMeasure μ] :
+    IsBoundedLinearMap 𝕜 ((∫ x, · x ∂μ) : (E →ᵇ F) → F) := by
+  constructor
+  · constructor
+    · refine fun f g ↦ integral_add (f.integrable μ) (g.integrable μ)
+    · refine fun c f ↦ integral_smul c f
+  · by_cases h : μ = 0
+    · refine ⟨1, zero_lt_one, fun f ↦ by aesop⟩
+    · use (MeasureTheory.measureUnivNNReal μ)
+      constructor
+      · exact MeasureTheory.measureUnivNNReal_pos h
+      · intro f
+        apply le_trans (BoundedContinuousFunction.norm_integral_le_mul_norm _ f)
+        gcongr
+        rfl
 
---TODO : Spin off continuity of integration
+theorem continuous_integral_finite [IsFiniteMeasure μ]:
+    Continuous ((∫ x, · x ∂μ) : (E →ᵇ F) → F) := by
+  apply IsBoundedLinearMap.continuous (isBDL_integral_of_finite ℝ μ)
+
+
 @[simps! apply]
 noncomputable def ofMeasureL : 𝓓^{n}(E, F) →L[𝕜] F where
   toLinearMap := (ofMeasureₗ 𝕜 n μ : 𝓓^{n}(E, F) →ₗ[𝕜] F)
@@ -371,40 +391,11 @@ noncomputable def ofMeasureL : 𝓓^{n}(E, F) →L[𝕜] F where
       have fin_μ : IsFiniteMeasure (μ.restrict K) := by
         have : Fact (μ K < ⊤) := fact_iff.mpr <| K.isCompact.measure_lt_top
         apply MeasureTheory.Restrict.isFiniteMeasure
-      set int' : (E →ᵇ F) →ₗ[𝕜] F := {
-          toFun := fun f => (∫ x, f x ∂(μ.restrict K))
-          map_add' := by
-            intro f g
-            apply integral_add
-            · exact BoundedContinuousFunction.integrable (μ.restrict ↑K) f
-            · exact BoundedContinuousFunction.integrable (μ.restrict ↑K) g
-          map_smul' := fun c f ↦ integral_smul c f
-        }
-      have : IsBoundedLinearMap 𝕜 int' := by
-        constructor
-        · exact LinearMap.isLinear int'
-        · by_cases h : (μ.restrict K) = 0
-          · use 1
-            refine ⟨zero_lt_one, fun f ↦ ?_⟩
-            simp [int', h]
-          · use (MeasureTheory.measureUnivNNReal (μ.restrict K))
-            constructor
-            · apply_mod_cast @MeasureTheory.measureUnivNNReal_pos _ _ _ fin_μ
-              exact h
-            · intro f
-              simp [int']
-              apply le_trans (BoundedContinuousFunction.norm_integral_le_mul_norm _ f)
-              gcongr
-              apply le_of_eq
-              rfl
-      set int : (E →ᵇ F) →L[𝕜] F :=
-        { toLinearMap := int'
-          cont := by
-            apply IsBoundedLinearMap.continuous this  }
       have : ofMeasureₗ ℝ n μ ∘ (toTestFunction ℝ F n K)
-          = int ∘ (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM 𝕜) := by
+          = ((∫ x, · x ∂(μ.restrict K)) : (E →ᵇ F) → F)  ∘
+            (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM 𝕜) := by
         ext f
-        simp [ofMeasureₗ, int, int']
+        simp [ofMeasureₗ]
         have hK : MeasurableSet (K : Set E) := by
           refine K.isCompact.measurableSet
         have : ∫ (x : E) in (K : Set E)ᶜ, f x ∂μ = 0 := by
@@ -414,7 +405,8 @@ noncomputable def ofMeasureL : 𝓓^{n}(E, F) →L[𝕜] F where
           MeasureTheory.integral_add_compl hK (map_integrable' n μ f)]
         congr
       rw [this]
-      exact int.continuous.comp (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM 𝕜).continuous
+      apply (continuous_integral_finite (μ.restrict K)).comp
+          (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM 𝕜).continuous
     )
 
 
@@ -468,6 +460,74 @@ noncomputable def ofLocallyIntegrableₗ {f : E → F} (hf : LocallyIntegrable f
 variable [IsFiniteMeasureOnCompacts μ] [SecondCountableTopology E] [NormSMulClass 𝕜 F]
 
 open LocallyIntegrableOn Integrable MeasureTheory
+
+variable (𝕜)
+theorem isLinear_integral {f : E → F} (hf : LocallyIntegrable f μ) (K : Compacts E) :
+  IsLinearMap 𝕜 fun φ : (E →ᵇ 𝕜) ↦ ∫ (x : E), φ x • (K : Set E).indicator f x ∂μ := by
+  constructor
+  · intro φ Φ
+    have h: ∀ φ : (E →ᵇ 𝕜), Integrable (fun x ↦ (φ x) • ((K : Set E).indicator f x)) μ := by
+      intro φ
+      have : support (fun x ↦ (φ x) • ((K : Set E).indicator f x)) ⊆ K := by
+        aesop
+      rw [← integrableOn_iff_integrable_of_support_subset this]
+      apply MeasureTheory.IntegrableOn.continuousOn_smul
+      · refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
+        refine integrableOn_isCompact (?_) K.isCompact
+        rw [MeasureTheory.locallyIntegrableOn_iff_locallyIntegrable_restrict]
+        rw [MeasureTheory.Measure.restrict_restrict]
+        simp
+        rw [← MeasureTheory.locallyIntegrableOn_iff_locallyIntegrable_restrict]
+        apply MeasureTheory.LocallyIntegrable.locallyIntegrableOn (hf) K
+        · exact K.isCompact.isClosed
+        · exact K.isCompact.measurableSet
+        · exact K.isCompact.isClosed
+      · exact φ.continuous.continuousOn
+      · exact K.isCompact
+    simp only [BoundedContinuousFunction.coe_add, Pi.add_apply]
+    simp_rw [add_smul, integral_add (h φ) (h Φ)]
+  · refine fun c φ ↦ by
+      simp only [BoundedContinuousFunction.coe_smul, RingHom.id_apply]
+      rw [← integral_smul c (fun (x : E) ↦  φ x • (K : Set E).indicator f x)]
+      simp_rw [smul_assoc]
+
+
+
+
+theorem  isBDL_integral {f : E → F} (hf : LocallyIntegrable f μ) (K : Compacts E):
+    IsBoundedLinearMap 𝕜 (fun φ : (E →ᵇ 𝕜) ↦ ∫ x, (φ x) • ((K : Set E).indicator f x) ∂μ) := by
+  constructor
+  · -- exact isLinear_integral 𝕜 μ hf K bleach
+    sorry
+  · set M := ∫ x, ‖(K : Set E).indicator f x‖∂μ
+    use M + 1
+    constructor
+    · refine add_pos_of_nonneg_of_pos ?_ (Real.zero_lt_one)
+      · refine le_trans ?_ (MeasureTheory.norm_integral_le_integral_norm _)
+        exact norm_nonneg _
+    · intro φ
+      set g : E → ℝ := fun x ↦ ‖φ‖ * ‖(K : Set E).indicator f x‖
+      have hg : Integrable g μ := by
+        apply Integrable.const_mul (Integrable.norm ?_)
+        refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
+        refine integrableOn_isCompact (hf.locallyIntegrableOn K) K.isCompact
+      have hgf : ∀ᵐ (x : E) ∂μ, ‖(fun a ↦ (φ a) • (K : Set E).indicator f a) x‖ ≤ g x := by
+        apply ae_of_all
+        intro x
+        simp only [g, norm_smul]
+        gcongr
+        exact BoundedContinuousFunction.norm_coe_le_norm φ x
+      apply le_trans (MeasureTheory.norm_integral_le_of_norm_le hg hgf)
+      simp only [g]
+      rw [integral_const_mul_of_integrable]
+      · rw [mul_comm]
+        gcongr
+        simp only [le_add_iff_nonneg_right, zero_le_one, M]
+      · apply Integrable.norm ?_
+        refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
+        refine integrableOn_isCompact (hf.locallyIntegrableOn K) K.isCompact
+
+
 @[simps! apply]
 noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f μ) :
     𝓓^{n}(E, 𝕜) →L[ℝ] F where
@@ -542,9 +602,10 @@ noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f �
             cont := by
               apply IsBoundedLinearMap.continuous this  }
         have : ofLocallyIntegrableₗ n μ hf ∘ (toTestFunction ℝ 𝕜 n K)
-          = int ∘ ((ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ)):= by
+          = (fun φ ↦ ∫ x, (φ x) • ((K : Set E).indicator f x) ∂μ) ∘
+              ((ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ)):= by
             ext φ
-            simp [ofLocallyIntegrableₗ, int, int']
+            simp [ofLocallyIntegrableₗ]
             congr
             ext x
             simp [toTestFunction_apply]
@@ -572,7 +633,7 @@ theorem delta_apply (x₀ : E) (f : 𝓓^{n}(E, F)) : delta 𝕜 F n x₀ f = f 
 
 open MeasureTheory Measure
 
-variable [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
 variable [SecondCountableTopology F] [MeasurableSpace F] [BorelSpace F]
 variable [CompleteSpace F]
 
