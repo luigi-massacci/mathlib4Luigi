@@ -494,38 +494,38 @@ theorem isLinear_integral {f : E → F} (hf : LocallyIntegrable f μ) (K : Compa
 
 
 
-theorem  isBDL_integral {f : E → F} (hf : LocallyIntegrable f μ) (K : Compacts E):
-    IsBoundedLinearMap 𝕜 (fun φ : (E →ᵇ 𝕜) ↦ ∫ x, (φ x) • ((K : Set E).indicator f x) ∂μ) := by
-  constructor
-  · -- exact isLinear_integral 𝕜 μ hf K bleach
-    sorry
-  · set M := ∫ x, ‖(K : Set E).indicator f x‖∂μ
-    use M + 1
-    constructor
-    · refine add_pos_of_nonneg_of_pos ?_ (Real.zero_lt_one)
-      · refine le_trans ?_ (MeasureTheory.norm_integral_le_integral_norm _)
-        exact norm_nonneg _
-    · intro φ
-      set g : E → ℝ := fun x ↦ ‖φ‖ * ‖(K : Set E).indicator f x‖
-      have hg : Integrable g μ := by
-        apply Integrable.const_mul (Integrable.norm ?_)
-        refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
-        refine integrableOn_isCompact (hf.locallyIntegrableOn K) K.isCompact
-      have hgf : ∀ᵐ (x : E) ∂μ, ‖(fun a ↦ (φ a) • (K : Set E).indicator f a) x‖ ≤ g x := by
-        apply ae_of_all
-        intro x
-        simp only [g, norm_smul]
-        gcongr
-        exact BoundedContinuousFunction.norm_coe_le_norm φ x
-      apply le_trans (MeasureTheory.norm_integral_le_of_norm_le hg hgf)
-      simp only [g]
-      rw [integral_const_mul_of_integrable]
-      · rw [mul_comm]
-        gcongr
-        simp only [le_add_iff_nonneg_right, zero_le_one, M]
-      · apply Integrable.norm ?_
-        refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
-        refine integrableOn_isCompact (hf.locallyIntegrableOn K) K.isCompact
+-- theorem  isBDL_integral {f : E → F} (hf : LocallyIntegrable f μ) (K : Compacts E):
+--     IsBoundedLinearMap 𝕜 (fun φ : (E →ᵇ 𝕜) ↦ ∫ x, (φ x) • ((K : Set E).indicator f x) ∂μ) := by
+--   constructor
+--   · -- exact isLinear_integral 𝕜 μ hf K bleach
+--     sorry
+--   · set M := ∫ x, ‖(K : Set E).indicator f x‖∂μ
+--     use M + 1
+--     constructor
+--     · refine add_pos_of_nonneg_of_pos ?_ (Real.zero_lt_one)
+--       · refine le_trans ?_ (MeasureTheory.norm_integral_le_integral_norm _)
+--         exact norm_nonneg _
+--     · intro φ
+--       set g : E → ℝ := fun x ↦ ‖φ‖ * ‖(K : Set E).indicator f x‖
+--       have hg : Integrable g μ := by
+--         apply Integrable.const_mul (Integrable.norm ?_)
+--         refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
+--         refine integrableOn_isCompact (hf.locallyIntegrableOn K) K.isCompact
+--       have hgf : ∀ᵐ (x : E) ∂μ, ‖(fun a ↦ (φ a) • (K : Set E).indicator f a) x‖ ≤ g x := by
+--         apply ae_of_all
+--         intro x
+--         simp only [g, norm_smul]
+--         gcongr
+--         exact BoundedContinuousFunction.norm_coe_le_norm φ x
+--       apply le_trans (MeasureTheory.norm_integral_le_of_norm_le hg hgf)
+--       simp only [g]
+--       rw [integral_const_mul_of_integrable]
+--       · rw [mul_comm]
+--         gcongr
+--         simp only [le_add_iff_nonneg_right, zero_le_one, M]
+--       · apply Integrable.norm ?_
+--         refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
+--         refine integrableOn_isCompact (hf.locallyIntegrableOn K) K.isCompact
 
 
 @[simps! apply]
