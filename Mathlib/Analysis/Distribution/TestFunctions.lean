@@ -357,10 +357,11 @@ noncomputable def ofMeasureₗ : 𝓓^{n}(E, F) →ₗ[𝕜] F :=
 
 variable [CompleteSpace F]
 
-noncomputable def _root_.integralFiniteMeasure (𝕜 : Type u_1) (E : Type u_2) (F : Type u_3) [NormedField 𝕜]
-  [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] [SecondCountableTopology F] [MeasurableSpace F] [BorelSpace F] (μ : Measure E)
-  [IsFiniteMeasure μ] : (E →ᵇ F) →L[𝕜] F := LinearMap.mkContinuous
+noncomputable def _root_.integralFiniteMeasure (𝕜 E F : Type*) [NormedField 𝕜]
+  [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] [SecondCountableTopology F]
+  [MeasurableSpace F] [BorelSpace F] (μ : Measure E) [IsFiniteMeasure μ] : (E →ᵇ F) →L[𝕜] F :=
+  LinearMap.mkContinuous
   ({
     toFun := (∫ x, · x ∂μ)
     map_add' := fun f g ↦ integral_add (f.integrable μ) (g.integrable μ)
@@ -473,7 +474,7 @@ theorem isLinear_integral {f : E → F} (hf : LocallyIntegrable f μ) (K : Compa
     simp only [BoundedContinuousFunction.coe_add, Pi.add_apply]
     simp_rw [add_smul, integral_add (h φ) (h Φ)]
   · refine fun c φ ↦ by
-      simp only [BoundedContinuousFunction.coe_smul, RingHom.id_apply]
+      simp only [BoundedContinuousFunction.coe_smul]
       rw [← integral_smul c (fun (x : E) ↦  φ x • (K : Set E).indicator f x)]
       simp_rw [smul_assoc]
 
