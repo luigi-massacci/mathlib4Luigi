@@ -357,22 +357,16 @@ noncomputable def ofMeasureₗ : 𝓓^{n}(E, F) →ₗ[𝕜] F :=
 
 variable [CompleteSpace F]
 
-theorem isBDL_integral_BCF [IsFiniteMeasure μ] :
-    IsBoundedLinearMap 𝕜 ((∫ x, · x ∂μ) : (E →ᵇ F) → F) := by
-  constructor
-  · constructor
-    · refine fun f g ↦ integral_add (f.integrable μ) (g.integrable μ)
-    · refine fun c f ↦ integral_smul c f
-  · by_cases h : μ = 0
-    · refine ⟨1, zero_lt_one, fun f ↦ by aesop⟩
-    · use (measureUnivNNReal μ)
-      constructor
-      · exact MeasureTheory.measureUnivNNReal_pos h
-      · refine fun f ↦ le_trans (f.norm_integral_le_mul_norm _) le_rfl
-
-theorem continuous_integral_BCF [IsFiniteMeasure μ]:
-    Continuous ((∫ x, · x ∂μ) : (E →ᵇ F) → F) := by
-  apply IsBoundedLinearMap.continuous (isBDL_integral_BCF ℝ μ)
+noncomputable def _root_.integralFiniteMeasure (𝕜 : Type u_1) (E : Type u_2) (F : Type u_3) [NormedField 𝕜]
+  [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] [SecondCountableTopology F] [MeasurableSpace F] [BorelSpace F] (μ : Measure E)
+  [IsFiniteMeasure μ] : (E →ᵇ F) →L[𝕜] F := LinearMap.mkContinuous
+  ({
+    toFun := (∫ x, · x ∂μ)
+    map_add' := fun f g ↦ integral_add (f.integrable μ) (g.integrable μ)
+    map_smul' := fun c f ↦ integral_smul c f
+  })
+  (measureUnivNNReal μ) (fun f ↦ le_trans (f.norm_integral_le_mul_norm _) le_rfl)
 
 
 @[simps! apply]
@@ -397,7 +391,7 @@ noncomputable def ofMeasureL : 𝓓^{n}(E, F) →L[𝕜] F where
           MeasureTheory.integral_add_compl hK (map_integrable' n μ f)]
         congr
       rw [this]
-      apply (continuous_integral_BCF (μ.restrict K)).comp
+      apply (integralFiniteMeasure 𝕜 E F (μ.restrict K)).continuous.comp
           (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM 𝕜).continuous
     )
 
@@ -518,6 +512,7 @@ theorem isLinear_integral {f : E → F} (hf : LocallyIntegrable f μ) (K : Compa
 --       · apply Integrable.norm ?_
 --         refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
 --         refine integrableOn_isCompact (hf.locallyIntegrableOn K) K.isCompact
+
 
 
 @[simps! apply]
