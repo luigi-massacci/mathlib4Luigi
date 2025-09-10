@@ -322,7 +322,7 @@ theorem continuous_of_commute_toTestFunction
 variable (n)
 
 
-section Integration
+section FromMeasure
 
 open MeasureTheory Module
 
@@ -357,7 +357,7 @@ noncomputable def ofMeasureₗ : 𝓓^{n}(E, F) →ₗ[𝕜] F :=
 
 variable [CompleteSpace F]
 
-theorem isBDL_integral_of_finite [IsFiniteMeasure μ] :
+theorem isBDL_integral_BCF [IsFiniteMeasure μ] :
     IsBoundedLinearMap 𝕜 ((∫ x, · x ∂μ) : (E →ᵇ F) → F) := by
   constructor
   · constructor
@@ -365,17 +365,14 @@ theorem isBDL_integral_of_finite [IsFiniteMeasure μ] :
     · refine fun c f ↦ integral_smul c f
   · by_cases h : μ = 0
     · refine ⟨1, zero_lt_one, fun f ↦ by aesop⟩
-    · use (MeasureTheory.measureUnivNNReal μ)
+    · use (measureUnivNNReal μ)
       constructor
       · exact MeasureTheory.measureUnivNNReal_pos h
-      · intro f
-        apply le_trans (BoundedContinuousFunction.norm_integral_le_mul_norm _ f)
-        gcongr
-        rfl
+      · refine fun f ↦ le_trans (f.norm_integral_le_mul_norm _) le_rfl
 
-theorem continuous_integral_finite [IsFiniteMeasure μ]:
+theorem continuous_integral_BCF [IsFiniteMeasure μ]:
     Continuous ((∫ x, · x ∂μ) : (E →ᵇ F) → F) := by
-  apply IsBoundedLinearMap.continuous (isBDL_integral_of_finite ℝ μ)
+  apply IsBoundedLinearMap.continuous (isBDL_integral_BCF ℝ μ)
 
 
 @[simps! apply]
@@ -393,24 +390,22 @@ noncomputable def ofMeasureL : 𝓓^{n}(E, F) →L[𝕜] F where
             (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM 𝕜) := by
         ext f
         simp [ofMeasureₗ]
-        have hK : MeasurableSet (K : Set E) := by
-          refine K.isCompact.measurableSet
+        have hK : MeasurableSet (K : Set E) := K.isCompact.measurableSet
         have : ∫ (x : E) in (K : Set E)ᶜ, f x ∂μ = 0 := by
-          refine setIntegral_eq_zero_of_forall_eq_zero ?_
-          exact f.zero_on_compl
+          refine setIntegral_eq_zero_of_forall_eq_zero f.zero_on_compl
         rw [← add_zero (∫ (x : E) in ↑K, f x ∂μ), ← this,
           MeasureTheory.integral_add_compl hK (map_integrable' n μ f)]
         congr
       rw [this]
-      apply (continuous_integral_finite (μ.restrict K)).comp
+      apply (continuous_integral_BCF (μ.restrict K)).comp
           (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM 𝕜).continuous
     )
 
 
-end Integration
+end FromMeasure
 
 
-section LocallyIntegrable
+section FromLocallyIntegrable
 
 
 open MeasureTheory Module
@@ -614,7 +609,7 @@ noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f �
           ((ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ)).continuous
     )
 
-end LocallyIntegrable
+end FromLocallyIntegrable
 
 
 section DiracDelta
