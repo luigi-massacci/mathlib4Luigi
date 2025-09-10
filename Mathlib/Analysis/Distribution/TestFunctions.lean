@@ -245,25 +245,22 @@ theorem continuous_toTestFunction (K : Compacts E) :
 variable {n E F}
 
 
-variable (𝕜' : Type*) [NontriviallyNormedField 𝕜']
-
-protected theorem continuous_iff {V : Type*} [AddCommMonoid V] [Module ℝ V] [Module 𝕜' V]
-  [SMulCommClass ℝ 𝕜' V] [t : TopologicalSpace V] [LocallyConvexSpace ℝ V]
-  (f : 𝓓^{n}(E, F) →ₗ[ℝ] V) :
+protected theorem continuous_iff {V : Type*} [AddCommMonoid V] [Module ℝ V]
+  [t : TopologicalSpace V] [LocallyConvexSpace ℝ V] (f : 𝓓^{n}(E, F) →ₗ[ℝ] V) :
     Continuous f ↔
-    ∀ K : Compacts E, Continuous (f ∘ toTestFunction 𝕜 F n K) := by
-    rw [continuous_iff_le_induced]
-    have : TestFunction.topologicalSpace E F n ≤ induced f t
-          ↔ originalTop ℝ F n ≤ induced f t := by
-        constructor <;> refine fun h ↦ ?_
-        · refine le_trans (le_sInf (fun _ _ ↦ ?_)) h
-          simp_all only [mem_setOf_eq]
-        · refine sInf_le ?_
-          simp only [mem_setOf_eq, LocallyConvexSpace.induced f, and_true, h]
-    rw [this, originalTop, iSup_le_iff]
-    simp_rw [← @coinduced_le_iff_le_induced _ _ f _ t, coinduced_compose]
-    simp_rw [← continuous_iff_coinduced_le]
-    rfl
+  ∀ K : Compacts E, Continuous (f ∘ toTestFunction 𝕜 F n K) := by
+  rw [continuous_iff_le_induced]
+  have : TestFunction.topologicalSpace E F n ≤ induced f t
+        ↔ originalTop ℝ F n ≤ induced f t := by
+      constructor <;> refine fun h ↦ ?_
+      · refine le_trans (le_sInf (fun _ _ ↦ ?_)) h
+        simp_all only [mem_setOf_eq]
+      · refine sInf_le ?_
+        simp only [mem_setOf_eq, LocallyConvexSpace.induced f, and_true, h]
+  rw [this, originalTop, iSup_le_iff]
+  simp_rw [← @coinduced_le_iff_le_induced _ _ f _ t, coinduced_compose]
+  simp_rw [← continuous_iff_coinduced_le]
+  rfl
 
 variable (E F n)
 
@@ -284,7 +281,7 @@ noncomputable def toBoundedContinuousFunctionCLM : 𝓓^{n}(E, F) →L[𝕜] E �
     cont := show Continuous (toBoundedContinuousFunctionₗ ℝ E F n)
       by
         (
-          rw [TestFunction.continuous_iff ℝ ℝ (toBoundedContinuousFunctionₗ ℝ E F n)]
+          rw [TestFunction.continuous_iff ℝ (toBoundedContinuousFunctionₗ ℝ E F n)]
           intro K
           rw [to_bcf_comp_eq _ _]
           exact (ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM 𝕜).continuous
@@ -318,7 +315,7 @@ theorem continuous_of_commute_toTestFunction
   (f : 𝓓^{n}(E, F) →ₗ[ℝ] 𝓓^{n}(E, G))
   (hc : toTestFunction_comp 𝕜 𝕜' f) :
     Continuous f := by
-  refine (TestFunction.continuous_iff ℝ ℝ f).mpr (fun K ↦ ?_)
+  refine (TestFunction.continuous_iff ℝ f).mpr (fun K ↦ ?_)
   obtain ⟨g, hg, hfg⟩ := hc K
   exact hfg ▸ (continuous_toTestFunction ℝ E G n K).comp hg
 
@@ -386,7 +383,7 @@ noncomputable def ofMeasureL : 𝓓^{n}(E, F) →L[𝕜] F where
   toLinearMap := (ofMeasureₗ 𝕜 n μ : 𝓓^{n}(E, F) →ₗ[𝕜] F)
   cont := show Continuous (ofMeasureₗ ℝ n μ) by
     (
-      rw [TestFunction.continuous_iff ℝ 𝕜 (ofMeasureₗ ℝ n μ)]
+      rw [TestFunction.continuous_iff ℝ (ofMeasureₗ ℝ n μ)]
       intro K
       have fin_μ : IsFiniteMeasure (μ.restrict K) := by
         have : Fact (μ K < ⊤) := fact_iff.mpr <| K.isCompact.measure_lt_top
@@ -534,7 +531,7 @@ noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f �
   toLinearMap := (ofLocallyIntegrableₗ n μ hf : 𝓓^{n}(E, 𝕜) →ₗ[ℝ] F)
   cont := show Continuous (ofLocallyIntegrableₗ n μ hf) by
     (
-        rw [TestFunction.continuous_iff ℝ ℝ (ofLocallyIntegrableₗ n μ hf)]
+        rw [TestFunction.continuous_iff ℝ (ofLocallyIntegrableₗ n μ hf)]
         intro K
         set int' : (E →ᵇ 𝕜) →ₗ[ℝ] F := {
             toFun := fun φ ↦ ∫ x, (φ x) • ((K : Set E).indicator f x) ∂μ
