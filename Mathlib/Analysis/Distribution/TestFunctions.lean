@@ -437,16 +437,32 @@ noncomputable def ofLocallyIntegrableₗ {f : E → F} (hf : LocallyIntegrable f
       simp_rw [smul_assoc, integral_smul c (fun x ↦  φ x • f x)]
   }
 
-variable [IsFiniteMeasureOnCompacts μ] [SecondCountableTopology E] [NormSMulClass 𝕜 F]
+variable [IsFiniteMeasureOnCompacts μ] [SecondCountableTopology E] [LocallyCompactSpace E]
+   [NormSMulClass 𝕜 F]
 
 open LocallyIntegrableOn Integrable MeasureTheory
+
+theorem integrable_restrict_smul_LocallyIntegrable {f : E → F} (hf : LocallyIntegrable f μ)
+  (K : Compacts E) (φ : E →ᵇ 𝕜) :
+    Integrable (fun x ↦ (φ x) • (f x)) (μ.restrict K) := by
+  refine integrableOn_isCompact ?_ K.isCompact
+  exact LocallyIntegrableOn.continuousOn_smul K.isCompact.isClosed.isLocallyClosed
+    (hf.locallyIntegrableOn K) φ.continuous.continuousOn
 
 variable (𝕜)
 noncomputable def testAgainstₗ {f : E → F} (hf : LocallyIntegrable f μ) (K : Compacts E) :
     (E →ᵇ 𝕜) →ₗ[𝕜] F where
   toFun := fun φ : (E →ᵇ 𝕜) ↦ ∫ (x : E), φ x • f x ∂(μ.restrict K)
-  map_add' := sorry
-  map_smul' := sorry
+  map_add' := by
+    intro φ Φ
+    simp only [BoundedContinuousFunction.coe_add, Pi.add_apply]
+    simp_rw [add_smul, integral_add (integrable_restrict_smul_LocallyIntegrable μ hf K φ)
+      (integrable_restrict_smul_LocallyIntegrable μ hf K Φ)]
+  map_smul' := by
+    intro c φ
+    simp only [BoundedContinuousFunction.coe_smul, RingHom.id_apply]
+    rw [← integral_smul c (fun (x : E) ↦  φ x • f x)]
+    simp_rw [smul_assoc]
 
 noncomputable def testAgainCLM {f : E → F} (hf : LocallyIntegrable f μ) (K : Compacts E) :
     (E →ᵇ 𝕜) →L[𝕜] F :=
@@ -467,36 +483,6 @@ noncomputable def testAgainCLM {f : E → F} (hf : LocallyIntegrable f μ) (K : 
     apply le_trans (MeasureTheory.norm_integral_le_of_norm_le hg h)
     rw [mul_comm, integral_const_mul_of_integrable (Integrable.norm hf')]
   )
-
-
--- theorem isLinear_integral {f : E → F} (hf : LocallyIntegrable f μ) (K : Compacts E) :
---   IsLinearMap 𝕜 fun φ : (E →ᵇ 𝕜) ↦ ∫ (x : E), φ x • (K : Set E).indicator f x ∂μ := by
---   constructor
---   · intro φ Φ
---     have h: ∀ φ : (E →ᵇ 𝕜), Integrable (fun x ↦ (φ x) • ((K : Set E).indicator f x)) μ := by
---       intro φ
---       have : support (fun x ↦ (φ x) • ((K : Set E).indicator f x)) ⊆ K := by
---         aesop
---       rw [← integrableOn_iff_integrable_of_support_subset this]
---       apply MeasureTheory.IntegrableOn.continuousOn_smul
---       · refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
---         refine integrableOn_isCompact (?_) K.isCompact
---         rw [MeasureTheory.locallyIntegrableOn_iff_locallyIntegrable_restrict]
---         rw [MeasureTheory.Measure.restrict_restrict]
---         simp
---         rw [← MeasureTheory.locallyIntegrableOn_iff_locallyIntegrable_restrict]
---         apply MeasureTheory.LocallyIntegrable.locallyIntegrableOn (hf) K
---         · exact K.isCompact.isClosed
---         · exact K.isCompact.measurableSet
---         · exact K.isCompact.isClosed
---       · exact φ.continuous.continuousOn
---       · exact K.isCompact
---     simp only [BoundedContinuousFunction.coe_add, Pi.add_apply]
---     simp_rw [add_smul, integral_add (h φ) (h Φ)]
---   · refine fun c φ ↦ by
---       simp only [BoundedContinuousFunction.coe_smul]
---       rw [← integral_smul c (fun (x : E) ↦  φ x • (K : Set E).indicator f x)]
---       simp_rw [smul_assoc]
 
 @[simps! apply]
 noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f μ) :
@@ -526,38 +512,6 @@ noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f �
       exact (testAgainCLM 𝕜 μ hf K).continuous.comp
         ((ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ)).continuous
     )
-
-
--- set int' : (E →ᵇ 𝕜) →ₗ[ℝ] F := {
---             toFun := fun φ ↦ ∫ x, (φ x) • ((K : Set E).indicator f x) ∂μ
---             map_add' := by
---               intro φ Φ
---               have h: ∀ φ : (E →ᵇ 𝕜), Integrable (fun x ↦ (φ x) • ((K : Set E).indicator f x)) μ :=
---                 by
---                 intro φ
---                 have : support (fun x ↦ (φ x) • ((K : Set E).indicator f x)) ⊆ K := by
---                   aesop
---                 rw [← integrableOn_iff_integrable_of_support_subset this]
---                 apply MeasureTheory.IntegrableOn.continuousOn_smul
---                 · refine IntegrableOn.integrable_indicator ?_ (K.isCompact.measurableSet)
---                   refine integrableOn_isCompact (?_) K.isCompact
---                   rw [MeasureTheory.locallyIntegrableOn_iff_locallyIntegrable_restrict]
---                   rw [MeasureTheory.Measure.restrict_restrict]
---                   simp
---                   rw [← MeasureTheory.locallyIntegrableOn_iff_locallyIntegrable_restrict]
---                   apply MeasureTheory.LocallyIntegrable.locallyIntegrableOn (hf) K
---                   · exact K.isCompact.isClosed
---                   · exact K.isCompact.measurableSet
---                   · exact K.isCompact.isClosed
---                 · exact φ.continuous.continuousOn
---                 · exact K.isCompact
---               simp only [BoundedContinuousFunction.coe_add, Pi.add_apply]
---               simp_rw [add_smul, integral_add (h φ) (h Φ)]
---             map_smul' :=  fun c φ ↦ by
---               simp only [BoundedContinuousFunction.coe_smul, RingHom.id_apply]
---               rw [← integral_smul c (fun (x : E) ↦  φ x • (K : Set E).indicator f x)]
---               simp_rw [smul_assoc]
---         }
 
 end FromLocallyIntegrable
 
