@@ -268,8 +268,7 @@ noncomputable def toBoundedContinuousFunctionₗ : 𝓓^{n}(E, F) →ₗ[𝕜] E
 
 lemma to_bcf_comp_eq (K : Compacts E) :
   (toBoundedContinuousFunctionₗ 𝕜 E F n) ∘ (ContDiffMapSupportedIn.toTestFunction 𝕜 F n K)  =
-    ContDiffMapSupportedIn.toBoundedContinuousFunctionₗ 𝕜 := by
-    congr 0
+    ContDiffMapSupportedIn.toBoundedContinuousFunctionₗ 𝕜 := by rfl
 
 @[simps!]
 noncomputable def toBoundedContinuousFunctionCLM : 𝓓^{n}(E, F) →L[𝕜] E →ᵇ F  :=
