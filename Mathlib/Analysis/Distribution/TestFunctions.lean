@@ -436,8 +436,7 @@ noncomputable def ofLocallyIntegrableₗ {f : E → F} (hf : LocallyIntegrable f
       simp_rw [smul_assoc, integral_smul c (fun x ↦  φ x • f x)]
   }
 
-variable [IsFiniteMeasureOnCompacts μ] [SecondCountableTopology E] [LocallyCompactSpace E]
-   [NormSMulClass 𝕜 F]
+variable [SecondCountableTopology E] [LocallyCompactSpace E] [NormSMulClass 𝕜 F]
 
 open LocallyIntegrableOn Integrable MeasureTheory
 
@@ -463,12 +462,12 @@ noncomputable def testAgainstₗ {f : E → F} (hf : LocallyIntegrable f μ) (K 
     rw [← integral_smul c (fun (x : E) ↦  φ x • f x)]
     simp_rw [smul_assoc]
 
-noncomputable def testAgainCLM {f : E → F} (hf : LocallyIntegrable f μ) (K : Compacts E) :
+noncomputable def testAgainstCLM {f : E → F} (hf : LocallyIntegrable f μ) (K : Compacts E) :
     (E →ᵇ 𝕜) →L[𝕜] F :=
   (TestFunction.testAgainstₗ 𝕜 μ hf K).mkContinuous (∫ x, ‖f x‖ ∂(μ.restrict K))
   (by
     intro φ
-    simp [TestFunction.testAgainstₗ]
+    simp? [testAgainstₗ]
     have hf' : Integrable f (μ.restrict K) :=
       integrableOn_isCompact (hf.locallyIntegrableOn K) K.isCompact
     set g := fun x ↦ ‖φ‖ * ‖f x‖ with g_def
@@ -508,7 +507,7 @@ noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f �
             integral_add_compl K.isCompact.measurableSet
               (integrable_smul_LocallyIntegrable n μ hf K φ)]
       rw [this]
-      exact (testAgainCLM 𝕜 μ hf K).continuous.comp
+      exact (testAgainstCLM 𝕜 μ hf K).continuous.comp
         ((ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ)).continuous
     )
 
