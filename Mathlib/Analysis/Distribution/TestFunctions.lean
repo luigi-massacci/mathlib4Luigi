@@ -507,7 +507,7 @@ noncomputable def ofLocallyIntegrableL {f : E → F} (hf : LocallyIntegrable f �
             rw [φ.zero_on_compl hx]
             simp only [Pi.zero_apply, zero_smul]
           rw [← add_zero (∫ (x : E) in ↑K, (φ x) • f x ∂μ), ← this,
-            integral_add_compl K.isCompact.measurableSet
+            integral_add_compl (K.isCompact.measurableSet) -- (by measurability works with changes)
               (integrable_smul_LocallyIntegrable n μ hf K φ)]
       rw [this]
       exact (testAgainstCLM 𝕜 μ hf K).continuous.comp

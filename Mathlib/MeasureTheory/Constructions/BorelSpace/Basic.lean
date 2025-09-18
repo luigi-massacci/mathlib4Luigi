@@ -250,12 +250,14 @@ theorem measurableSet_of_continuousAt {β} [PseudoEMetricSpace β] (f : α → �
     MeasurableSet { x | ContinuousAt f x } :=
   (IsGδ.setOf_continuousAt f).measurableSet
 
+@[measurability]
 theorem IsClosed.measurableSet (h : IsClosed s) : MeasurableSet s :=
   h.isOpen_compl.measurableSet.of_compl
 
 theorem IsClosed.nullMeasurableSet {μ} (h : IsClosed s) : NullMeasurableSet s μ :=
   h.measurableSet.nullMeasurableSet
 
+@[measurability]
 theorem IsCompact.measurableSet [T2Space α] (h : IsCompact s) : MeasurableSet s :=
   h.isClosed.measurableSet
 
