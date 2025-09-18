@@ -39,18 +39,22 @@ section LocallyIntegrableOn
 /-- A function `f : X → E` is *locally integrable on s*, for `s ⊆ X`, if for every `x ∈ s` there is
 a neighbourhood of `x` within `s` on which `f` is integrable. (Note this is, in general, strictly
 weaker than local integrability with respect to `μ.restrict s`.) -/
+@[fun_prop]
 def LocallyIntegrableOn (f : X → ε) (s : Set X) (μ : Measure X := by volume_tac) : Prop :=
   ∀ x : X, x ∈ s → IntegrableAtFilter f (𝓝[s] x) μ
 
+@[fun_prop]
 theorem LocallyIntegrableOn.mono_set (hf : LocallyIntegrableOn f s μ) {t : Set X}
     (hst : t ⊆ s) : LocallyIntegrableOn f t μ := fun x hx =>
   (hf x <| hst hx).filter_mono (nhdsWithin_mono x hst)
 
+@[fun_prop]
 theorem LocallyIntegrableOn.enorm (hf : LocallyIntegrableOn f s μ) :
     LocallyIntegrableOn (‖f ·‖ₑ) s μ := fun t ht ↦
   let ⟨U, hU_nhd, hU_int⟩ := hf t ht
   ⟨U, hU_nhd, hU_int.enorm⟩
 
+@[fun_prop]
 theorem LocallyIntegrableOn.norm {f : X → E} (hf : LocallyIntegrableOn f s μ) :
     LocallyIntegrableOn (fun x => ‖f x‖) s μ := fun t ht =>
   let ⟨U, hU_nhd, hU_int⟩ := hf t ht
@@ -63,6 +67,7 @@ theorem LocallyIntegrableOn.mono_enorm (hf : LocallyIntegrableOn f s μ) {g : X 
   rcases hf x hx with ⟨t, t_mem, ht⟩
   exact ⟨t, t_mem, ht.mono_enorm hg.restrict (ae_restrict_of_ae h)⟩
 
+@[fun_prop]
 theorem LocallyIntegrableOn.mono {f : X → E} (hf : LocallyIntegrableOn f s μ) {g : X → F}
     (hg : AEStronglyMeasurable g μ) (h : ∀ᵐ x ∂μ, ‖g x‖ ≤ ‖f x‖) :
     LocallyIntegrableOn g s μ := by
@@ -70,15 +75,18 @@ theorem LocallyIntegrableOn.mono {f : X → E} (hf : LocallyIntegrableOn f s μ)
   rcases hf x hx with ⟨t, t_mem, ht⟩
   exact ⟨t, t_mem, Integrable.mono ht hg.restrict (ae_restrict_of_ae h)⟩
 
+@[fun_prop]
 theorem IntegrableOn.locallyIntegrableOn (hf : IntegrableOn f s μ) : LocallyIntegrableOn f s μ :=
   fun _ _ => ⟨s, self_mem_nhdsWithin, hf⟩
 
 /-- If a function is locally integrable on a compact set, then it is integrable on that set. -/
+@[fun_prop]
 theorem LocallyIntegrableOn.integrableOn_isCompact [PseudoMetrizableSpace ε]
     (hf : LocallyIntegrableOn f s μ) (hs : IsCompact s) : IntegrableOn f s μ :=
   IsCompact.induction_on hs integrableOn_empty (fun _u _v huv hv => hv.mono_set huv)
     (fun _u _v hu hv => integrableOn_union.mpr ⟨hu, hv⟩) hf
 
+@[fun_prop]
 theorem LocallyIntegrableOn.integrableOn_compact_subset [PseudoMetrizableSpace ε]
     (hf : LocallyIntegrableOn f s μ) {t : Set X} (hst : t ⊆ s) (ht : IsCompact t) :
     IntegrableOn f t μ :=
@@ -172,6 +180,7 @@ end LocallyIntegrableOn
 /-- A function `f : X → ε` is *locally integrable* if it is integrable on a neighborhood of every
 point. In particular, it is integrable on all compact sets,
 see `LocallyIntegrable.integrableOn_isCompact`. -/
+@[fun_prop]
 def LocallyIntegrable (f : X → ε) (μ : Measure X := by volume_tac) : Prop :=
   ∀ x : X, IntegrableAtFilter f (𝓝 x) μ
 
@@ -183,9 +192,11 @@ theorem locallyIntegrable_comap (hs : MeasurableSet s) :
 theorem locallyIntegrableOn_univ : LocallyIntegrableOn f univ μ ↔ LocallyIntegrable f μ := by
   simp only [LocallyIntegrableOn, nhdsWithin_univ, mem_univ, true_imp_iff]; rfl
 
+@[fun_prop]
 theorem LocallyIntegrable.locallyIntegrableOn (hf : LocallyIntegrable f μ) (s : Set X) :
     LocallyIntegrableOn f s μ := fun x _ => (hf x).filter_mono nhdsWithin_le_nhds
 
+@[fun_prop]
 theorem Integrable.locallyIntegrable (hf : Integrable f μ) : LocallyIntegrable f μ := fun _ =>
   hf.integrableAtFilter _
 
@@ -204,6 +215,7 @@ theorem LocallyIntegrable.mono {f : X → E} (hf : LocallyIntegrable f μ) {g : 
 /-- If `f` is locally integrable with respect to `μ.restrict s`, it is locally integrable on `s`.
 (See `locallyIntegrableOn_iff_locallyIntegrable_restrict` for an iff statement when `s` is
 closed.) -/
+@[fun_prop]
 theorem locallyIntegrableOn_of_locallyIntegrable_restrict [OpensMeasurableSpace X]
     (hf : LocallyIntegrable f (μ.restrict s)) : LocallyIntegrableOn f s μ := by
   intro x _
@@ -231,6 +243,7 @@ theorem locallyIntegrableOn_iff_locallyIntegrable_restrict [OpensMeasurableSpace
     exacts [integrableOn_empty, hs.measurableSet]
 
 /-- If a function is locally integrable, then it is integrable on any compact set. -/
+@[fun_prop]
 theorem LocallyIntegrable.integrableOn_isCompact [PseudoMetrizableSpace ε]
     {k : Set X} (hf : LocallyIntegrable f μ) (hk : IsCompact k) : IntegrableOn f k μ :=
   (hf.locallyIntegrableOn k).integrableOn_isCompact hk

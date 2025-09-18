@@ -47,6 +47,7 @@ def Simps.coe (s : Compacts α) : Set α := s
 
 initialize_simps_projections Compacts (carrier → coe, as_prefix coe)
 
+@[aesop unsafe]
 protected theorem isCompact (s : Compacts α) : IsCompact (s : Set α) :=
   s.isCompact'
 

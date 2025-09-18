@@ -462,13 +462,16 @@ noncomputable def testAgainstₗ {f : E → F} (hf : LocallyIntegrable f μ) (K 
     rw [← integral_smul c (fun (x : E) ↦  φ x • f x)]
     simp_rw [smul_assoc]
 
+--set_option trace.Meta.Tactic.fun_prop true
+
 noncomputable def testAgainstCLM {f : E → F} (hf : LocallyIntegrable f μ) (K : Compacts E) :
     (E →ᵇ 𝕜) →L[𝕜] F :=
   (TestFunction.testAgainstₗ 𝕜 μ hf K).mkContinuous (∫ x, ‖f x‖ ∂(μ.restrict K))
   (by
     intro φ
-    simp? [testAgainstₗ]
+    simp only [testAgainstₗ, LinearMap.coe_mk, AddHom.coe_mk]
     have hf' : Integrable f (μ.restrict K) :=
+    --by fun_prop (maxTransitionDepth := 2) (disch := aesop)
       integrableOn_isCompact (hf.locallyIntegrableOn K) K.isCompact
     set g := fun x ↦ ‖φ‖ * ‖f x‖ with g_def
     have hg : Integrable g (μ.restrict K) := (Integrable.norm hf').const_mul _

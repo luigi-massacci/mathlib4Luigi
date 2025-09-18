@@ -92,15 +92,17 @@ theorem HasFiniteIntegral.restrict_of_bounded_enorm {C : ℝ≥0∞} (hC : ‖C�
 
 /-- A function is `IntegrableOn` a set `s` if it is almost everywhere strongly measurable on `s`
 and if the integral of its pointwise norm over `s` is less than infinity. -/
+@[fun_prop]
 def IntegrableOn (f : α → ε) (s : Set α) (μ : Measure α := by volume_tac) : Prop :=
   Integrable f (μ.restrict s)
 
+@[fun_prop]
 theorem IntegrableOn.integrable (h : IntegrableOn f s μ) : Integrable f (μ.restrict s) :=
   h
 
 variable [TopologicalSpace ε'] [ESeminormedAddMonoid ε']
 
-@[simp]
+@[simp, fun_prop]
 theorem integrableOn_empty : IntegrableOn f ∅ μ := by
   simp [IntegrableOn]
 
@@ -108,9 +110,11 @@ theorem integrableOn_empty : IntegrableOn f ∅ μ := by
 theorem integrableOn_univ : IntegrableOn f univ μ ↔ Integrable f μ := by
   rw [IntegrableOn, Measure.restrict_univ]
 
+@[fun_prop]
 theorem integrableOn_zero : IntegrableOn (fun _ => (0 : ε')) s μ :=
   integrable_zero _ _ _
 
+@[fun_prop]
 theorem IntegrableOn.of_measure_zero (hs : μ s = 0) : IntegrableOn f s μ := by
   simp [IntegrableOn, Measure.restrict_eq_zero.2 hs]
 
@@ -119,6 +123,7 @@ theorem integrableOn_const_iff {C : ε'} (hC : ‖C‖ₑ ≠ ∞ := by finitene
     IntegrableOn (fun _ ↦ C) s μ ↔ ‖C‖ₑ = 0 ∨ μ s < ∞ := by
   rw [IntegrableOn, integrable_const_iff_enorm hC, isFiniteMeasure_restrict, lt_top_iff_ne_top]
 
+@[fun_prop]
 theorem integrableOn_const {C : ε'} (hs : μ s ≠ ∞ := by finiteness)
     (hC : ‖C‖ₑ ≠ ∞ := by finiteness) : IntegrableOn (fun _ ↦ C) s μ :=
   (integrableOn_const_iff hC).2 <| Or.inr <| lt_top_iff_ne_top.2 hs
@@ -126,9 +131,11 @@ theorem integrableOn_const {C : ε'} (hs : μ s ≠ ∞ := by finiteness)
 theorem IntegrableOn.mono (h : IntegrableOn f t ν) (hs : s ⊆ t) (hμ : μ ≤ ν) : IntegrableOn f s μ :=
   h.mono_measure <| Measure.restrict_mono hs hμ
 
+@[fun_prop]
 theorem IntegrableOn.mono_set (h : IntegrableOn f t μ) (hst : s ⊆ t) : IntegrableOn f s μ :=
   h.mono hst le_rfl
 
+@[fun_prop]
 theorem IntegrableOn.mono_measure (h : IntegrableOn f s ν) (hμ : μ ≤ ν) : IntegrableOn f s μ :=
   h.mono (Subset.refl _) hμ
 
@@ -157,6 +164,7 @@ theorem integrableOn_congr_fun (hst : EqOn f g s) (hs : MeasurableSet s) :
     IntegrableOn f s μ ↔ IntegrableOn g s μ :=
   ⟨fun h => h.congr_fun hst hs, fun h => h.congr_fun hst.symm hs⟩
 
+@[fun_prop]
 theorem Integrable.integrableOn (h : Integrable f μ) : IntegrableOn f s μ := h.restrict
 
 @[simp]
@@ -319,6 +327,7 @@ theorem Integrable.indicator (h : Integrable f μ) (hs : MeasurableSet s) :
     Integrable (indicator s f) μ :=
   h.integrableOn.integrable_indicator hs
 
+@[fun_prop]
 theorem IntegrableOn.indicator (h : IntegrableOn f s μ) (ht : MeasurableSet t) :
     IntegrableOn (indicator t f) s μ :=
   Integrable.indicator h ht
