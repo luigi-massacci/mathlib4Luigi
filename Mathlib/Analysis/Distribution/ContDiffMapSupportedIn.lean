@@ -24,19 +24,28 @@ variable [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
 variable {n : ℕ∞} {K : Compacts E}
 
+/-- The type of `n`-times continuously differentiable maps which vanish outside of a fixed
+compact `K`. -/
 structure ContDiffMapSupportedIn (n : ℕ∞) (K : Compacts E) : Type _ where
+  /-- The underlying function. Use coercion instead. -/
   protected toFun : E → F
   protected contDiff' : ContDiff ℝ n toFun
   protected zero_on_compl' : EqOn toFun 0 Kᶜ
 
+/-- Notation for the space of `n`-times continuously differentiable
+functions with support in a compact `K` -/
 scoped[Distributions] notation "𝓓^{" n "}_{"K"}(" E ", " F ")" =>
   ContDiffMapSupportedIn E F n K
 
+/-- Notation for the space of smooth (inifinitely differentiable)
+functions with support in a compact `K` -/
 scoped[Distributions] notation "𝓓_{"K"}(" E ", " F ")" =>
   ContDiffMapSupportedIn E F ⊤ K
 
 open Distributions
 
+/-- `BoundedContinuousMapClass B E F` states that `B` is a type of `n`-times continously
+differentiable functions with support in the compact `K`. -/
 class ContDiffMapSupportedInClass (B : Type*) (E F : outParam <| Type*)
     [NormedAddCommGroup E] [NormedAddCommGroup F] [NormedSpace ℝ E] [NormedSpace ℝ F]
     (n : outParam ℕ∞) (K : outParam <| Compacts E)
@@ -88,7 +97,7 @@ theorem toFun_eq_coe {f : 𝓓^{n}_{K}(E, F)} : f.toFun = (f : E → F) :=
 /-- See note [custom simps projection]. -/
 def Simps.apply (f : 𝓓^{n}_{K}(E, F)) : E →F  := f
 
--- this must come after the coe_to_fun definition
+-- this must come after the coe_to_fun definition.
 initialize_simps_projections ContDiffMapSupportedIn (toFun → apply)
 
 @[ext]
@@ -223,7 +232,6 @@ end AddCommGroup
 
 section Module
 
--- Note: This should probably be used more! the ugy ext ... ext ... is in a lot of places.
 instance {R} [Semiring R] [Module R F] [SMulCommClass ℝ R F] [ContinuousConstSMul R F] :
     Module R 𝓓^{n}_{K}(E, F) :=
   (coeHom_injective n K).module R (coeHom E F n K) fun _ _ => rfl
@@ -240,7 +248,7 @@ protected theorem hasCompactSupport (f : 𝓓^{n}_{K}(E, F)) : HasCompactSupport
   HasCompactSupport.intro K.isCompact f.zero_on_compl
 
 /-- Inclusion of unbundled `n`-times continuously differentiable function with support included
-in a compact `K` into the space `𝓓^{n}_{K}` -/
+in a compact `K` into the space `𝓓^{n}_{K}`. -/
 protected def of_support_subset {f : E → F} (hf : ContDiff ℝ n f) (hsupp : support f ⊆ K) :
     𝓓^{n}_{K}(E, F) where
   toFun := f
@@ -254,14 +262,16 @@ protected theorem bounded_iteratedFDeriv (f : 𝓓^{n}_{K}(E, F)) {i : ℕ} (hi 
     (f.hasCompactSupport.iteratedFDeriv i)
 
 
-/-- Inclusion of `𝓓^{n}_{K}(E, F)` into the space `E →ᵇ F` as a `𝕜`-linear map -/
+/-- Inclusion of `𝓓^{n}_{K}(E, F)` into the space `E →ᵇ F` of bounded continuous maps
+as a `𝕜`-linear map. -/
 @[simps]
 noncomputable def toBoundedContinuousFunctionₗ : 𝓓^{n}_{K}(E, F) →ₗ[𝕜] E →ᵇ F  where
   toFun f := f
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
-
+/-- Wrapper for `iteratedFDeriv i` on `𝓓^{n}_{K}(E, F)`,
+as a map into `𝓓^{n-i}_{K}(E, E [×i]→L[ℝ] F)`. -/
 noncomputable def iteratedFDeriv' (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
     𝓓^{n-i}_{K}(E, E [×i]→L[ℝ] F) :=
   if hi : i ≤ n then
@@ -317,6 +327,7 @@ lemma iteratedFDeriv'_smul (i : ℕ) {c : 𝕜} {f : 𝓓^{n}_{K}(E, F)} :
     refine ContDiff.contDiffAt <| f.contDiff.of_le (by exact_mod_cast hin)
   · rw [smul_zero]
 
+/-- Wrapper for iteratedFDeriv' as a `𝕜`-linear map. -/
 @[simps]
 noncomputable def iteratedFDerivₗ' (i : ℕ) :
     𝓓^{n}_{K}(E, F) →ₗ[𝕜] 𝓓^{n-i}_{K}(E, E [×i]→L[ℝ] F) where
@@ -374,9 +385,12 @@ lemma continuous_iff_comp {X} [TopologicalSpace X] (φ : X → 𝓓^{n}_{K}(E, F
 
 variable (E F n K)
 
+/-- The seminorms on the space `𝓓^{n}_{K}(E, F)` given by sup norm on the `i`-th derivative. -/
 protected noncomputable def seminorm (i : ℕ) : Seminorm 𝕜 𝓓^{n}_{K}(E, F) :=
   (normSeminorm 𝕜 (E →ᵇ (E [×i]→L[ℝ] F))).comp (iteratedFDeriv_toBoundedContinuousFunctionₗ 𝕜 i)
 
+/-- The seminorms on the space `𝓓^{n}_{K}(E, F)` given by sup of the
+`ContDiffMapSupportedIn.seminorm k`for `k ≤ i`. -/
 protected noncomputable def seminorm' (i : ℕ) : Seminorm 𝕜 𝓓^{n}_{K}(E, F) :=
   (Finset.Iic i).sup (ContDiffMapSupportedIn.seminorm 𝕜 E F n K)
 
@@ -401,11 +415,6 @@ protected theorem seminorm_apply (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
       ‖(f.iteratedFDeriv' i : E →ᵇ (E [×i]→L[ℝ] F))‖ :=
   rfl
 
-@[simp]
-lemma iteratedFDeriv'_tobcf_apply (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) (x : E) :
-  (f.iteratedFDeriv' i : E →ᵇ (E [×i]→L[ℝ] F)) x = f.iteratedFDeriv' i x := by
-    rfl
-
 protected theorem seminorm_eq_bot {i : ℕ} (hin : n < i) :
     ContDiffMapSupportedIn.seminorm 𝕜 E F n K i = ⊥ := by
   ext f
@@ -417,14 +426,11 @@ theorem norm_toBoundedContinuousFunctionₗ (f : 𝓓^{n}_{K}(E, F)) :
     ‖toBoundedContinuousFunctionₗ 𝕜 f‖ = ContDiffMapSupportedIn.seminorm 𝕜 E F n K 0 f := by
   simp only [BoundedContinuousFunction.norm_eq_iSup_norm, toBoundedContinuousFunctionₗ_apply_apply,
     ContDiffMapSupportedIn.seminorm_apply]
-  simp only [iteratedFDeriv'_tobcf_apply]
-  conv =>
-    enter [-1, 1, x, 1]
-    calc
-      _ = iteratedFDeriv ℝ 0 ⇑f x := by simp
-      _ = _ := ?_
-  simp only [norm_iteratedFDeriv_zero]
+  simp only [toBoundedContinuousFunction_apply, iteratedFDeriv'_apply, CharP.cast_eq_zero,
+  zero_le, ↓reduceIte, norm_iteratedFDeriv_zero]
 
+/-- The inclusion of the space  `𝓓^{n}_{K}(E, F)` into the space `E →ᵇ F` of bounded continuous
+functions as a continuous `𝕜`-linear map. -/
 @[simps!]
 noncomputable def toBoundedContinuousFunctionCLM : 𝓓^{n}_{K}(E, F) →L[𝕜] E →ᵇ F :=
   { toLinearMap := toBoundedContinuousFunctionₗ 𝕜
@@ -451,6 +457,7 @@ section fderiv
 
 open Distributions
 
+/-- Wrapper for `fderiv` on `𝓓^{n}_{K}(E, F)`, as a map into `𝓓^{n-1}_{K}(E, E →L[ℝ] F)` -/
 protected noncomputable def fderiv' (f : 𝓓^{n}_{K}(E, F)) :
     𝓓^{n-1}_{K}(E, E →L[ℝ] F) :=
   if hn : n = 0 then 0 else
@@ -479,6 +486,7 @@ lemma coe_fderiv'_zero (f : 𝓓^{0}_{K}(E, F)) :
   rw [fderiv'_apply]
   exact if_pos rfl
 
+/-- Bundling of `fderiv` as a `𝕜`-linear map. -/
 @[simps]
 noncomputable def fderivₗ' {n : ℕ∞} : 𝓓^{n}_{K}(E, F) →ₗ[𝕜] 𝓓^{n-1}_{K}(E, E →L[ℝ] F) where
   toFun f := f.fderiv'
@@ -527,6 +535,7 @@ theorem seminorm_fderiv' (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
         exact lt_of_tsub_lt_tsub_right hin'
       simp [hin', hin'']
 
+/-- Bundling of `fderiv'` as continuous `𝕜`-linear map. -/
 @[simps! apply]
 noncomputable def fderivCLM' : 𝓓^{n}_{K}(E, F) →L[𝕜] 𝓓^{n-1}_{K}(E, E →L[ℝ] F) where
   toLinearMap := fderivₗ' 𝕜
@@ -541,6 +550,8 @@ noncomputable def fderivCLM' : 𝓓^{n}_{K}(E, F) →L[𝕜] 𝓓^{n-1}_{K}(E, E
 
 section infinite
 
+/-- Specialization of `iteratedFDeriv'` for the space `𝓓_{K}(E, F)` of smooth compactly supported
+functions, as a map `𝓓_{K}(E, F) → 𝓓_{K}(E, E [×i]→L[ℝ] F)` with no loss of smoothness. -/
 protected noncomputable def iteratedFDeriv (i : ℕ) (f : 𝓓_{K}(E, F)) : 𝓓_{K}(E, E [×i]→L[ℝ] F) :=
   (f.iteratedFDeriv' i).copy (iteratedFDeriv ℝ i f) (coe_iteratedFDeriv'_of_le le_top f)
 
@@ -553,11 +564,14 @@ lemma iteratedFDeriv_apply (i : ℕ) (f : 𝓓_{K}(E, F)) (x : E) :
     f.iteratedFDeriv i x = iteratedFDeriv ℝ i f x := by
   rfl
 
+/-- Bundling of `ContDiffMapSupportedIn.iteratedFDeriv` as `𝕜`-linear map. -/
 @[simps! apply]
 noncomputable def iteratedFDerivₗ (i : ℕ) : 𝓓_{K}(E, F) →ₗ[𝕜] 𝓓_{K}(E, E [×i]→L[ℝ] F) :=
   (iteratedFDerivₗ' 𝕜 i).copy (ContDiffMapSupportedIn.iteratedFDeriv i) <| funext <|
     iteratedFDeriv_eq_iteratedFDeriv' i
 
+/-- Specialisation of `fderiv'` to the space `𝓓_{K}(E, F)` of smooth compactly supported functions
+as a map `𝓓_{K}(E, F) → 𝓓_{K}(E, E →L[ℝ] F)`, with no loss of smoothness. -/
 protected noncomputable def fderiv (f : 𝓓_{K}(E, F)) : 𝓓_{K}(E, E →L[ℝ] F) :=
   f.fderiv'.copy (fderiv ℝ f) (coe_fderiv'_of_ne (by decide) f)
 
@@ -569,10 +583,12 @@ lemma fderiv_apply (f : 𝓓_{K}(E, F)) (x : E) :
     f.fderiv x = fderiv ℝ f x := by
   rfl
 
+/-- Bundling of `ContDiffMapSupportedIn.fderiv` as a `𝕜`-linear map. -/
 @[simps! apply]
 noncomputable def fderivₗ : 𝓓_{K}(E, F) →ₗ[𝕜] 𝓓_{K}(E, E →L[ℝ] F) :=
   (fderivₗ' 𝕜).copy ContDiffMapSupportedIn.fderiv <| funext fderiv_eq_fderiv'
 
+/-- Bundling of `ContDiffMapSupportedIn.fderiv` as a continuous `𝕜`-linear map. -/
 @[simps! apply]
 noncomputable def fderivCLM : 𝓓_{K}(E, F) →L[𝕜] 𝓓_{K}(E, E →L[ℝ] F) :=
   (fderivCLM' 𝕜).copy ContDiffMapSupportedIn.fderiv <| funext fderiv_eq_fderiv'
@@ -604,5 +620,3 @@ protected theorem withSeminorms_of_finite : WithSeminorms
 end finite
 
 end ContDiffMapSupportedIn
-
-#lint
