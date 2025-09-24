@@ -239,6 +239,8 @@ protected theorem tsupport_subset (f : 𝓓^{n}_{K}(E, F)) : tsupport f ⊆ K :=
 protected theorem hasCompactSupport (f : 𝓓^{n}_{K}(E, F)) : HasCompactSupport f :=
   HasCompactSupport.intro K.isCompact f.zero_on_compl
 
+/-- Inclusion of unbundled `n`-times continuously differentiable function with support included
+in a compact `K` into the space `𝓓^{n}_{K}` -/
 protected def of_support_subset {f : E → F} (hf : ContDiff ℝ n f) (hsupp : support f ⊆ K) :
     𝓓^{n}_{K}(E, F) where
   toFun := f
@@ -251,11 +253,14 @@ protected theorem bounded_iteratedFDeriv (f : 𝓓^{n}_{K}(E, F)) {i : ℕ} (hi 
     (f.contDiff.continuous_iteratedFDeriv <| (WithTop.le_coe rfl).mpr hi)
     (f.hasCompactSupport.iteratedFDeriv i)
 
+
+/-- Inclusion of `𝓓^{n}_{K}(E, F)` into the space `E →ᵇ F` as a `𝕜`-linear map -/
 @[simps]
 noncomputable def toBoundedContinuousFunctionₗ : 𝓓^{n}_{K}(E, F) →ₗ[𝕜] E →ᵇ F  where
   toFun f := f
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
+
 
 noncomputable def iteratedFDeriv' (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
     𝓓^{n-i}_{K}(E, E [×i]→L[ℝ] F) :=
@@ -599,3 +604,5 @@ protected theorem withSeminorms_of_finite : WithSeminorms
 end finite
 
 end ContDiffMapSupportedIn
+
+#lint
