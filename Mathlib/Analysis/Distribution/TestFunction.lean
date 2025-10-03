@@ -408,4 +408,96 @@ noncomputable def testAgainstCLM : 𝓓^{n}(E, F) →L[𝕜] F where
 
 end Measure
 
+namespace LocallyIntegrable
+
+open MeasureTheory Module
+
+variable [MeasurableSpace E]
+variable (μ : Measure E)
+
+variable [NormedSpace ℝ 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+  [ContinuousConstSMul 𝕜 F]
+
+variable [Module 𝕜 F] [SMulCommClass ℝ 𝕜 F] [ContinuousConstSMul 𝕜 F] [IsScalarTower ℝ 𝕜 F]
+
+variable {E F}
+
+noncomputable def testAgainst (f : E → F) :
+    𝓓^{n}(E, 𝕜) → F := fun φ : 𝓓^{n}(E, 𝕜) ↦ (∫ x, (φ x) • (f x) ∂μ)
+
+@[simp]
+lemma testAgainst_apply (f : E → F) (φ : 𝓓^{n}(E, 𝕜)) :
+    testAgainst 𝕜 n μ f φ = (∫ x, (φ x) • (f x) ∂μ) := by
+  rfl
+
+variable [OpensMeasurableSpace E] [IsBoundedSMul 𝕜 F]
+variable {𝕜}
+
+lemma integrable_smul_LocallyIntegrable {f : E → F} (hf : LocallyIntegrable f μ) (K : Compacts E)
+  (φ : 𝓓^{n}_{K}(E, 𝕜)) :
+    Integrable (fun x ↦ (φ x) • (f x)) μ :=
+  hf.integrable_smul_left_of_hasCompactSupport (map_continuous φ) (φ.compact_supp)
+
+lemma integrable__TestFunction_smul_LocallyIntegrable {f : E → F} (hf : LocallyIntegrable f μ)
+  (φ : 𝓓^{n}(E, 𝕜)) :
+    Integrable (fun x ↦ (φ x) • (f x)) μ :=
+  hf.integrable_smul_left_of_hasCompactSupport (map_continuous φ) (φ.compact_supp)
+
+-- TODO: This fails to synthetize Module 𝕜 𝓓^{n}(E, 𝕜), so fixing map to be ℝ-linear.
+noncomputable def testAgainstₗ {f : E → F} (hf : LocallyIntegrable f μ) :
+    𝓓^{n}(E, 𝕜) →ₗ[ℝ] F :=
+  { toFun := testAgainst 𝕜 n μ f
+    map_add' := fun φ Φ  ↦ by
+      simp only [testAgainst_apply, add_apply]
+      simp_rw [add_smul]
+      apply integral_add (integrable__TestFunction_smul_LocallyIntegrable n μ hf φ)
+        (integrable__TestFunction_smul_LocallyIntegrable n μ hf Φ)
+    map_smul' := fun c φ ↦ by
+      simp only [testAgainst_apply, smul_apply, RingHom.id_apply]
+      simp_rw [smul_assoc, integral_smul c (fun x ↦  φ x • f x)]
+  }
+
+variable [SecondCountableTopology E] [LocallyCompactSpace E] [NormSMulClass 𝕜 F]
+
+open LocallyIntegrableOn Integrable MeasureTheory
+
+theorem integrable_restrict_smul_LocallyIntegrable {f : E → F} (hf : LocallyIntegrable f μ)
+  (K : Compacts E) (φ : E →ᵇ 𝕜) :
+    Integrable (fun x ↦ (φ x) • (f x)) (μ.restrict K) := by
+  refine integrableOn_isCompact ?_ K.isCompact
+  exact LocallyIntegrableOn.continuousOn_smul K.isCompact.isClosed.isLocallyClosed
+    (hf.locallyIntegrableOn K) φ.continuous.continuousOn
+
+@[simps! apply]
+noncomputable def testAgainstCLM {f : E → F} (hf : LocallyIntegrable f μ) :
+    𝓓^{n}(E, 𝕜) →L[ℝ] F where
+  toLinearMap := (testAgainstₗ n μ hf : 𝓓^{n}(E, 𝕜) →ₗ[ℝ] F)
+  cont := show Continuous (testAgainstₗ n μ hf) by
+    (
+      rw [TestFunction.continuous_iff_continuous_comp ℝ (testAgainstₗ n μ hf)]
+      intro K
+      have : testAgainstₗ n μ hf ∘ (toTestFunction ℝ 𝕜 n K)
+        = (fun φ ↦ ∫ x, (φ x) • (f x) ∂(μ.restrict K)) ∘
+            ((ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ)):= by
+          ext φ
+          simp only [testAgainstₗ, LinearMap.coe_mk, AddHom.coe_mk, Function.comp_apply,
+            testAgainst_apply,
+            ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM_apply_apply]
+          simp only [toTestFunction_apply]
+          have : ∫ (x : E) in (K : Set E)ᶜ, (φ x) • f x ∂μ = 0 := by
+            refine setIntegral_eq_zero_of_forall_eq_zero ?_
+            intro x hx
+            rw [φ.zero_on_compl hx]
+            simp only [Pi.zero_apply, zero_smul]
+          rw [← add_zero (∫ (x : E) in ↑K, (φ x) • f x ∂μ), ← this,
+            integral_add_compl K.isCompact.measurableSet
+              (integrable_smul_LocallyIntegrable n μ hf K φ)]
+      rw [this]
+      exact (BoundedContinuousFunction.LocallyIntegrable.testAgainstCLM 𝕜 hf K).continuous.comp
+        ((ContDiffMapSupportedIn.toBoundedContinuousFunctionCLM ℝ)).continuous
+    )
+
+end LocallyIntegrable
+
+
 end TestFunction
